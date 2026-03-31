@@ -705,9 +705,9 @@ function showAddEntryModal(defaultPO) {
     ${!defaultPO ? `<div class="${TW.field}"><label class="${TW.label}">Starting PO Quantity <span class="text-txt-3 normal-case font-normal">(first entry only — total qty on PO)</span></label><input id="ne-balance" type="text" placeholder="e.g. 200,000" inputmode="decimal" class="${TW.input}"/></div>` : ''}
     <div class="${TW.field}"><label class="${TW.label}">Hauling Date</label>
       <div class="c-datepicker relative" id="ne-dp">
-        <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal cursor-pointer rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 select-none has-value" id="ne-dp-trigger" onclick="window._toggleDp && window._toggleDp('ne-dp')">
-          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
-          <span id="ne-dp-label">${new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}</span>
+        <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal cursor-pointer rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 select-none has-value" id="ne-dp-trigger">
+          <svg class="ico shrink-0 cursor-pointer text-txt-3 hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+          <input id="ne-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3" placeholder="MM-DD-YY or Select Date" value="${formatDateLong(new Date())}" />
         </div>
         <div class="c-cal" id="ne-dp-cal"></div>
       </div>
@@ -727,9 +727,33 @@ function showAddEntryModal(defaultPO) {
 
   // Init custom datepicker on modal
   initDatepicker('ne-dp', false);
-  // Select today by default
   const now = new Date();
   selectDay('ne-dp', now.getFullYear(), now.getMonth(), now.getDate());
+
+  const neDateInp = overlay.querySelector('#ne-dp-label');
+  const handleDateBlur = () => {
+    const val = neDateInp.value.trim();
+    if (!val) return;
+    const parsed = parseFlexibleDate(val);
+    if (parsed) {
+      selectDay('ne-dp', parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    } else {
+      // Revert to current selected if invalid
+      const s = dpState['ne-dp']?.selected || new Date();
+      neDateInp.value = formatDateLong(s);
+    }
+  };
+  neDateInp.onblur = handleDateBlur;
+  neDateInp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleDateBlur(); neDateInp.blur(); } };
+  neDateInp.onfocus = () => neDateInp.select();
+
+  // Trigger calendar open only on icon click or label click (but input focus is separate)
+  overlay.querySelector('#ne-dp-trigger').onclick = (e) => {
+    // If user clicked exactly the input, don't toggle the calendar (let them type)
+    if (e.target.id === 'ne-dp-label') return;
+    // Otherwise open/toggle
+    if (window._toggleDp) window._toggleDp('ne-dp');
+  };
 
   // Input formatters for thousands separator
   const fmtInput = (e) => {
@@ -750,6 +774,7 @@ function showAddEntryModal(defaultPO) {
     const qtyStr = overlay.querySelector('#ne-qty').value.trim();
     if (!qtyStr) { toast('Quantity Hauled is required', 'warn'); return; }
     const qty = parseFloat(qtyStr.replace(/,/g, '')) || 0;
+    if (qty <= 0) { toast('Please enter a valid quantity', 'warn'); return; }
 
     const dpS = dpState['ne-dp'];
     let selDate = '';
@@ -1408,19 +1433,50 @@ function numDisplay(v) { const n = parseNum(v); return isNaN(n) || n === 0 ? '' 
 function dateToInput(val) {
   if (!val) return '';
   if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
-  const m = String(val).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (m) {
-    const yr = m[3].length === 2 ? (parseInt(m[3]) > 50 ? '19' : '20') + m[3] : m[3];
-    return `${yr}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
-  }
+  const d = parseFlexibleDate(val);
+  if (d) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   return '';
+}
+
+function parseFlexibleDate(str) {
+  if (!str) return null;
+  const s = str.trim();
+  if (!s) return null;
+
+  // Try ISO first
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  // Common delimiters: / - . space
+  const m = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})(?:[\/\-\.\s](\d{2,4}))?$/);
+  if (m) {
+    let month = parseInt(m[1]);
+    let day = parseInt(m[2]);
+    let year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+
+    if (m[3] && m[3].length === 2) {
+      year = year < 50 ? 2000 + year : 1900 + year;
+    }
+    const d = new Date(year, month - 1, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+function formatDateLong(date) {
+  if (!date || isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function formatDateDisplay(val) {
   if (!val) return '';
   const iso = dateToInput(val);
   if (!iso) return val;
-  const d = new Date(iso + 'T00:00:00');
+  const [y, m, day] = iso.split('-').map(Number);
+  const d = new Date(y, m - 1, day);
   if (isNaN(d.getTime())) return val;
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
@@ -1565,9 +1621,12 @@ function selectDay(id, y, m, d) {
   const s = dpState[id];
   const date = new Date(y, m, d); date.setHours(0,0,0,0);
   s.selected = date; s.year = y; s.month = m; s.view = 'day';
-  const label = date.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+  const label = formatDateLong(date);
   const labelEl = document.getElementById(id + '-label');
-  if (labelEl) { labelEl.textContent = label; }
+  if (labelEl) {
+    if (labelEl.tagName === 'INPUT') labelEl.value = label;
+    else labelEl.textContent = label;
+  }
   const trigger = document.getElementById(id + '-trigger');
   if (trigger) trigger.classList.add('has-value');
   renderCal(id);
