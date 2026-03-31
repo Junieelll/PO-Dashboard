@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Shared PO Data</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      colors: {
+        bg: '#fafbff',
+        surface: '#ffffff',
+        'surface-2': '#f5f6fb',
+        line: '#e2e4ef',
+        txt: '#1a1c2e',
+        'txt-2': '#5a5d78',
+        'txt-3': '#93959f',
+        accent: '#f472b6',
+        'accent-2': '#ec4899',
+        petal: '#fbbcd0',
+      }
+    }
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Sakura Petals */
+  .petal-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .petal {
+    position: absolute; width: 12px; height: 12px;
+    background: var(--petal, #fbbcd0);
+    border-radius: 50% 0 50% 50%;
+    opacity: 0; animation: petalFall linear infinite; filter: blur(0.5px);
+  }
+  @keyframes petalFall {
+    0%   { opacity: 0; transform: translateY(-20px) rotate(0deg) scale(0.8); }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.3; }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg) scale(0.3); }
+  }
+  @keyframes fadeUp  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes rowIn   { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes spin    { to { transform: rotate(360deg); } }
+
+  .anim-fadeUp { animation: fadeUp 0.5s ease-out; }
+  .anim-rowIn  { animation: rowIn 0.3s ease-out both; }
+  .anim-spin   { animation: spin 0.8s linear infinite; }
+</style>
+</head>
+<body class="font-sans bg-bg text-txt min-h-screen overflow-x-hidden antialiased">
+
+<div class="petal-canvas" id="petals"></div>
+<div class="relative z-10 max-w-[1000px] mx-auto py-10 px-6 anim-fadeUp" id="content">
+  <div class="flex flex-col items-center justify-center min-h-[60vh] text-center gap-3">
+    <div class="w-8 h-8 border-[3px] border-line border-t-accent rounded-full anim-spin"></div>
+    <p class="text-txt-2 text-[13px]">Loading shared data…</p>
+  </div>
+</div>
+
+<script>
+// Sakura Petals
+(function initPetals() {
+  const canvas = document.getElementById('petals');
+  const COUNT = 30;
+  for (let i = 0; i < COUNT; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const size = 6 + Math.random() * 12;
+    const hue = 330 + Math.random() * 20;
+    p.style.cssText = `
+      left: ${Math.random() * 100}%;
+      width: ${size}px; height: ${size}px;
+      background: hsl(${hue}, 80%, ${75 + Math.random() * 15}%);
+      animation-duration: ${8 + Math.random() * 12}s;
+      animation-delay: ${Math.random() * 15}s;
+      opacity: 0;
+    `;
+    canvas.appendChild(p);
+  }
+})();
+
+// Load Data
+(async function load() {
+  const token = new URLSearchParams(location.search).get('token');
+  const wrap = document.getElementById('content');
+
+  if (!token) {
+    wrap.innerHTML = renderError('No Token', 'No share token provided in URL.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/share/view/${token}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      wrap.innerHTML = renderError(
+        res.status === 404 ? 'Not Found' : 'Expired',
+        data.error || 'This link is no longer available.'
+      );
+      return;
+    }
+
+    const cols = data.columns || [];
+    const rows = data.cellData || [];
+
+    const groups = {};
+    const order = [];
+    rows.forEach(r => {
+      const po = r.po_number || 'Unassigned';
+      if (!groups[po]) { groups[po] = []; order.push(po); }
+      groups[po].push(r);
+    });
+
+    wrap.innerHTML = `
+    <div class="bg-surface border border-line rounded-2xl overflow-hidden shadow-lg">
+      <div class="relative py-10 px-8 flex flex-col justify-end min-h-[160px] bg-pink-100 overflow-hidden">
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105" style="background-image: url('sakura.png')"></div>
+        <div class="absolute inset-0 bg-gradient-to-tr from-pink-600/90 via-pink-500/70 to-pink-300/40 mix-blend-multiply pointer-events-none"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-pink-950/60 to-transparent pointer-events-none"></div>
+        <div class="relative z-10 drop-shadow-md mt-4">
+          <h1 class="text-[28px] font-extrabold tracking-tight text-white flex items-center gap-2.5">
+            <span class="text-pink-200 inline-flex items-center">
+              <svg class="w-7 h-7 drop-shadow-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            </span>
+            ${esc(data.label || data.sheetName)}
+          </h1>
+          <div class="text-pink-100/90 text-[13px] mt-1.5 font-medium tracking-wide drop-shadow">Shared by ${esc(data.owner)} &mdash; ${order.length} PO${order.length === 1 ? '' : 's'} (${rows.length} total entries)</div>
+        </div>
+      </div>
+
+      <div class="p-6 flex flex-col gap-6 bg-surface-2/30">
+        ${order.length === 0 ? '<div class="text-center py-10 text-txt-3 text-sm">No entries available.</div>' : ''}
+        ${order.map(po => {
+          const entries = groups[po];
+          return `
+          <div class="bg-surface border border-line rounded-[20px] overflow-hidden shadow-sm hover:border-pink-200 transition-colors">
+            <div class="px-5 py-4 bg-gradient-to-r from-pink-50/50 to-transparent border-b border-line flex items-center justify-between">
+              <h3 class="font-bold text-txt text-[16px] tracking-tight flex items-center"><span class="text-xs text-txt-3 font-medium mr-3 bg-rose-400 px-2.5 py-1 rounded-full text-white">P.O. NUMBER</span>${esc(po)}</h3>
+              <span class="text-[11px] font-semibold text-txt-3 uppercase tracking-wider bg-surface border border-line px-2 py-0.5 rounded-md shadow-sm">${entries.length} entr${entries.length===1?'y':'ies'}</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse tabular-nums">
+                <thead><tr>
+                  ${cols.map(c => `<th class="py-3 px-4 text-[11px] font-semibold text-txt-3 uppercase tracking-[0.5px] text-left border-b border-line whitespace-nowrap bg-surface cursor-default ${c.type === 'number' ? '!text-right' : ''}">${esc(c.label)}</th>`).join('')}
+                </tr></thead>
+                <tbody>
+                  ${entries.map((row, ri) => `<tr class="anim-rowIn hover:bg-pink-50/60 transition-colors" style="animation-delay:${ri*0.03}s">
+                    ${cols.map(c => {
+                      const v = row[c.id] ?? '';
+                      const isNum = c.type === 'number';
+                      const display = isNum && v ? Number(String(v).replace(/,/g,'')).toLocaleString('en-US', {minimumFractionDigits:2}) : v;
+                      return `<td class="py-3 px-4 border-b border-line text-[13px] text-txt-2 ${isNum ? '!text-right font-medium text-txt' : ''}">${esc(display)}</td>`;
+                    }).join('')}
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="py-4 px-6 border-t border-line text-center text-[11px] font-medium text-txt-3 bg-surface">
+        Generated ${new Date(data.sharedAt).toLocaleString()}
+        ${data.expiresAt ? ` · Expires ${new Date(data.expiresAt).toLocaleString()}` : ''}
+      </div>
+    </div>`;
+
+  } catch (err) {
+    wrap.innerHTML = renderError('Connection Error', 'Could not reach the server.');
+  }
+})();
+
+function renderError(title, msg) {
+  return `<div class="flex flex-col items-center justify-center min-h-[60vh] text-center gap-3">
+    <svg class="w-12 h-12 text-txt-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <h2 class="text-lg font-bold">${title}</h2>
+    <p class="text-txt-2 text-[13px]">${msg}</p>
+  </div>`;
+}
+
+function esc(s) { const d = document.createElement('span'); d.textContent = s ?? ''; return d.innerHTML; }
+</script>
+</body>
+</html>
