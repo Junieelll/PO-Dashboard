@@ -15,7 +15,17 @@ async function request(method, path, body) {
   const opts = { method, headers: headers() };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(`${API}${path}`, opts);
-  const data = await res.json();
+  
+  let data;
+  const contentType = res.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    data = await res.json();
+  } else {
+    // If server returns HTML (e.g. 502 Bad Gateway when crashed)
+    const text = await res.text();
+    throw new Error(`Server returned ${res.status} (Not JSON): ` + (text.slice(0, 50) || 'Empty response'));
+  }
+
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }
