@@ -854,9 +854,9 @@ function showAddHaulingModal(poNum) {
     <p class="${TW.modalSub}">Adding hauling entry for <strong>${esc(poNum)}</strong></p>
     <div class="${TW.field}"><label class="${TW.label}">Hauling Date</label>
       <div class="c-datepicker relative" id="nh-dp">
-        <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal cursor-pointer rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 select-none has-value" id="nh-dp-trigger">
+        <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 has-value" id="nh-dp-trigger" onclick="window._toggleDp('nh-dp')">
           <svg class="ico shrink-0 cursor-pointer text-txt-3 hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
-          <input id="nh-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3" placeholder="MM-DD-YY or Select Date" value="${formatDateLong(new Date())}" />
+          <input id="nh-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3 cursor-text" placeholder="Type date or click calendar…" value="" onclick="event.stopPropagation()" />
         </div>
         <div class="c-cal" id="nh-dp-cal"></div>
       </div>
@@ -874,9 +874,31 @@ function showAddHaulingModal(poNum) {
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
+  // Close calendar when clicking outside the datepicker
+  overlay.addEventListener('click', (e) => {
+    if (!e.target.closest('#nh-dp')) {
+      document.getElementById('nh-dp')?.classList.remove('open');
+    }
+  });
+
   initDatepicker('nh-dp', false);
-  const now = new Date();
-  selectDay('nh-dp', now.getFullYear(), now.getMonth(), now.getDate());
+  // No pre-selection — field starts blank, date is optional
+
+  // When user types in the date field, clear calendar selection so typed value wins
+  const dateInp = overlay.querySelector('#nh-dp-label');
+  dateInp.addEventListener('input', () => {
+    if (dpState['nh-dp']) dpState['nh-dp'].selected = null;
+  });
+  dateInp.addEventListener('blur', () => {
+    // Try to parse and navigate calendar to typed month for context
+    const parsed = parseFlexibleDate(dateInp.value.trim());
+    if (parsed && dpState['nh-dp']) {
+      dpState['nh-dp'].year = parsed.getFullYear();
+      dpState['nh-dp'].month = parsed.getMonth();
+      dpState['nh-dp'].selected = parsed;
+      renderCal('nh-dp');
+    }
+  });
 
   const qInp = overlay.querySelector('#nh-qty');
   qInp.addEventListener('input', window._fmtCommaInput);
@@ -886,14 +908,24 @@ function showAddHaulingModal(poNum) {
     const qty = parseNum(qInp.value) || 0;
     if (qty <= 0) return toast('Valid quantity required', 'warn');
 
+    // Use calendar-selected date, typed date, or empty string (date is optional)
     const dpS = dpState['nh-dp'];
     let selDate = '';
     if (dpS?.selected) {
-      selDate = dpS.selected.getFullYear() + '-' + 
-                String(dpS.selected.getMonth() + 1).padStart(2, '0') + '-' + 
+      selDate = dpS.selected.getFullYear() + '-' +
+                String(dpS.selected.getMonth() + 1).padStart(2, '0') + '-' +
                 String(dpS.selected.getDate()).padStart(2, '0');
     } else {
-      selDate = new Date().toISOString().slice(0, 10);
+      const typed = overlay.querySelector('#nh-dp-label')?.value.trim();
+      if (typed) {
+        const parsed = parseFlexibleDate(typed);
+        if (parsed) {
+          selDate = parsed.getFullYear() + '-' + String(parsed.getMonth() + 1).padStart(2, '0') + '-' + String(parsed.getDate()).padStart(2, '0');
+        } else {
+          selDate = typed; // pass raw text through — your date translator will handle it
+        }
+      }
+      // if still empty, selDate stays '' — allowed
     }
 
     cellData.push({
