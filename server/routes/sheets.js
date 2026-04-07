@@ -92,10 +92,14 @@ router.get('/:id/full', async (req, res) => {
     );
     if (!owned.length) return res.status(403).json({ error: 'Access denied' });
 
-    // Single query — no JOINs needed
     const { rows: entries } = await db.query(
-      `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, starting_qty
+      `SELECT po_number, hauling_date, quantity, running_balance, invoice_no
        FROM po_entries WHERE sheet_id = $1 ORDER BY position ASC`,
+      [sheetId]
+    );
+
+    const { rows: purchaseOrders } = await db.query(
+      `SELECT po_number, starting_qty, waste_description FROM purchase_orders WHERE sheet_id = $1`,
       [sheetId]
     );
 
@@ -127,6 +131,7 @@ router.get('/:id/full', async (req, res) => {
     res.json({
       columns: DEFAULT_COLUMNS,
       cellData: entries,
+      purchaseOrders: purchaseOrders,
       thresholds: thresholdDict,
       emailSettings: emailSettings || { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning' },
       alertLog: alertLog.map(l => ({

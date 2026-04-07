@@ -50,6 +50,20 @@ async function migrate() {
     console.log('✅  Table: po_entries');
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS purchase_orders (
+        id                SERIAL PRIMARY KEY,
+        sheet_id          INT  NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,
+        po_number         TEXT NOT NULL DEFAULT '',
+        starting_qty      TEXT NOT NULL DEFAULT '',
+        waste_description TEXT NOT NULL DEFAULT '',
+        created_at        TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE (sheet_id, po_number)
+      )
+    `);
+    console.log('✅  Table: purchase_orders');
+
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS thresholds (
         id         SERIAL PRIMARY KEY,
         sheet_id   INT              NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,

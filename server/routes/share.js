@@ -112,20 +112,38 @@ router.get('/view/:token', async (req, res) => {
     );
 
     let entries = [];
+    let poRows  = [];
+
     if (link.po_list && Array.isArray(link.po_list)) {
+      // Filtered by selected POs
       const { rows } = await db.query(
-        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, starting_qty
+        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no
          FROM po_entries WHERE sheet_id = $1 AND po_number = ANY($2::text[]) ORDER BY position ASC`,
         [sheetId, link.po_list]
       );
       entries = rows;
+
+      const { rows: pos } = await db.query(
+        `SELECT po_number, starting_qty, waste_description
+         FROM purchase_orders WHERE sheet_id = $1 AND po_number = ANY($2::text[])`,
+        [sheetId, link.po_list]
+      );
+      poRows = pos;
     } else {
+      // All POs
       const { rows } = await db.query(
-        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, starting_qty
+        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no
          FROM po_entries WHERE sheet_id = $1 ORDER BY position ASC`,
         [sheetId]
       );
       entries = rows;
+
+      const { rows: pos } = await db.query(
+        `SELECT po_number, starting_qty, waste_description
+         FROM purchase_orders WHERE sheet_id = $1`,
+        [sheetId]
+      );
+      poRows = pos;
     }
 
     res.json({
@@ -133,6 +151,7 @@ router.get('/view/:token', async (req, res) => {
       expiresAt: link.expires_at, sharedAt: new Date().toISOString(),
       columns: DEFAULT_COLUMNS,
       cellData: entries,
+      purchaseOrders: poRows,
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

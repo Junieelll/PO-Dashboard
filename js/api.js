@@ -35,7 +35,7 @@ export const sheets = {
 };
 
 export const data = {
-  saveRows:      (id, cellData) => request('PUT', `/data/${id}/rows`, { cellData }),
+  saveRows:      (id, cellData, purchaseOrders) => request('PUT', `/data/${id}/rows`, { cellData, purchaseOrders }),
   saveColumns:   (id, columns)  => request('PUT', `/data/${id}/columns`, { columns }),
   saveThreshold: (id, thr)      => request('PUT', `/data/${id}/threshold`, thr),
   saveEmail:     (id, cfg)      => request('PUT', `/data/${id}/email`, cfg),

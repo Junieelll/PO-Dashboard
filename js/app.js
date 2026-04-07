@@ -16,6 +16,7 @@ const I = {
   clipboard:  `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>`,
   inbox:      `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-17.399 0V6.108c0-1.135.845-2.098 1.976-2.192a48.424 48.424 0 0112.214 0c1.131.094 1.976 1.057 1.976 2.192V13.5M2.25 13.5V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.5"/></svg>`,
   excTriangle:`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>`,
+  search:     `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>`,
   checkCircle:`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
   logout:     `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>`,
   trash:      `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`,
@@ -27,6 +28,8 @@ const I = {
   moon:       `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>`,
   clipCopy:   `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>`,
   chevDown:   `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>`,
+  ellipsisVertical: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/></svg>`,
+  pencil:     `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>`,
   document: `<svg class="ico" viewBox="0 0 24 24" fill="currentColor" class="size-6">
   <path fill-rule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clip-rule="evenodd" />
   <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
@@ -40,11 +43,13 @@ let sheets     = [];
 let activeSheet = null;
 let columns    = [];
 let cellData   = [];
+let purchaseOrders = []; // New state row
 let thresholds = { '*': { danger: 0, warn: 1000 } };
 let emailCfg   = { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning' };
 let alertLog   = [];
 let saveTimer  = null;
-let lastAlertKey = '';
+let lastAlertKey = {}; // Tracker for previously triggered alerts per PO
+let searchQuery  = '';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -62,7 +67,7 @@ const TW = {
   input: 'w-full bg-surface-2 border-[1.5px] border-line rounded-xl py-[11px] px-3.5 text-txt text-[13px] font-normal outline-none transition-all duration-200 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-txt-3',
   ghostBtn: 'inline-flex items-center justify-center gap-1.5 px-[22px] py-[9px] border border-line rounded-xl font-semibold text-[13px] cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit min-w-[96px]',
   primaryBtn: 'inline-flex items-center justify-center gap-1.5 px-[22px] py-[9px] border-none rounded-xl font-semibold text-[13px] cursor-pointer transition-all duration-200 whitespace-nowrap bg-gradient-to-br from-accent to-[#ef4444] text-white min-w-[96px] shadow-[0_4px_16px_rgba(124,92,252,0.25)] hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(124,92,252,0.35)]',
-  dangerBtn: 'inline-flex items-center justify-center gap-1.5 px-[22px] py-[9px] border border-danger/[0.18] rounded-xl font-semibold text-[13px] cursor-pointer transition-all duration-200 whitespace-nowrap bg-danger/[0.08] text-danger hover:bg-danger/[0.15] min-w-[96px]',
+  dangerBtn: 'inline-flex items-center justify-center gap-1.5 px-[22px] py-[9px] border-none rounded-xl font-bold text-[13px] cursor-pointer transition-all duration-200 whitespace-nowrap bg-[#ef4444] text-white hover:bg-[#dc2626] min-w-[96px] shadow-[0_4px_12px_rgba(239,68,68,0.2)]',
 };
 
 // ══════════════════════════════════════════════════════════
@@ -70,11 +75,22 @@ const TW = {
 // ══════════════════════════════════════════════════════════
 function toast(msg, type = 'ok') {
   const el = document.createElement('div');
-  const bc = { ok: 'border-l-ok', warn: 'border-l-warn', danger: 'border-l-danger' }[type] || '';
-  el.className = `py-3.5 px-5 bg-surface border border-line border-l-[3px] ${bc} rounded-xl text-[13px] text-txt font-medium anim-toastIn pointer-events-auto max-w-[380px] shadow-lg`;
-  el.textContent = msg;
+  const icon = { ok: I.checkCircle, warn: I.excTriangle, danger: I.excTriangle }[type] || I.checkCircle;
+  const accent = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[type] || 'text-ok';
+  
+  el.className = `py-3 px-4 bg-[#1a1c23] border border-white/10 rounded-2xl text-[13px] text-white font-medium anim-toastIn pointer-events-auto flex items-center gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md`;
+  
+  el.innerHTML = `
+    <span class="${accent} [&_.ico]:w-5 [&_.ico]:h-5 transition-transform duration-300 scale-110">${icon}</span>
+    <span class="flex-1 opacity-95">${msg}</span>
+  `;
+  
   $('#toast-container').appendChild(el);
-  setTimeout(() => { el.classList.remove('anim-toastIn'); el.classList.add('anim-toastOut'); setTimeout(() => el.remove(), 300); }, 3000);
+  setTimeout(() => { 
+    el.classList.remove('anim-toastIn'); 
+    el.classList.add('anim-toastOut'); 
+    setTimeout(() => el.remove(), 300); 
+  }, 3500);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -87,9 +103,9 @@ function renderAuth(isLogin = true) {
   app().innerHTML = `
   <div class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
     <!-- Decorative orbs -->
-    <div class="absolute top-[8%] left-[10%] w-80 h-80 bg-accent/10 rounded-full blur-[100px] anim-orbDrift pointer-events-none"></div>
-    <div class="absolute bottom-[12%] right-[8%] w-72 h-72 bg-teal/[0.06] rounded-full blur-[80px] anim-float1 pointer-events-none"></div>
-    <div class="absolute top-[45%] left-[55%] w-40 h-40 bg-accent-2/[0.08] rounded-full blur-[60px] anim-float2 pointer-events-none"></div>
+    <div class="absolute top-[8%] left-[10%] w-80 h-80 bg-accent/15 rounded-full blur-[100px] anim-orbDrift pointer-events-none"></div>
+    <div class="absolute bottom-[12%] right-[8%] w-72 h-72 bg-teal/[0.12] rounded-full blur-[80px] anim-float1 pointer-events-none"></div>
+    <div class="absolute top-[45%] left-[55%] w-40 h-40 bg-accent-2/[0.12] rounded-full blur-[60px] anim-float2 pointer-events-none"></div>
     <!-- Geometric shapes -->
     <svg class="absolute top-[18%] right-[22%] w-4 h-4 text-accent/30 anim-float1" viewBox="0 0 16 16"><rect width="10" height="10" x="3" y="3" rx="2" fill="currentColor" transform="rotate(45 8 8)"/></svg>
     <svg class="absolute bottom-[28%] left-[18%] w-3 h-3 text-teal/25 anim-float2" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg>
@@ -183,15 +199,16 @@ async function loadSheet(id) {
   const d = await api.sheets.loadFull(id);
   columns    = d.columns;
   cellData   = d.cellData || [];
+  purchaseOrders = d.purchaseOrders || [];
   thresholds = d.thresholds && Object.keys(d.thresholds).length ? d.thresholds : { '*': { danger: 0, warn: 1000 } };
   emailCfg   = d.emailSettings || { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning' };
   alertLog   = d.alertLog || [];
   activeSheet = id;
-  lastAlertKey = '';
-  recomputeAllBalances();
-  
-  const al = getAlertRows();
-  lastAlertKey = al.length ? al.map(a => `${a.po}:${a.level}:${a.bv}`).join('|') : '';
+  lastAlertKey = {};
+  const currentAl = getAlertRows();
+  currentAl.forEach(a => {
+    lastAlertKey[a.po] = `${a.level}:${a.bv}`;
+  });
 }
 
 function getThreshold(po) {
@@ -208,8 +225,8 @@ function renderApp() {
   <div class="flex flex-col min-h-screen anim-fadeIn relative">
     <!-- Background decoration -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <div class="absolute -top-32 -right-32 w-[500px] h-[500px] bg-accent/[0.04] rounded-full blur-[120px] anim-orbDrift"></div>
-      <div class="absolute bottom-0 left-[15%] w-80 h-80 bg-teal/[0.03] rounded-full blur-[100px] anim-float2"></div>
+      <div class="absolute -top-32 -right-32 w-[600px] h-[600px] bg-accent/[0.12] rounded-full blur-[120px] anim-orbDrift"></div>
+      <div class="absolute bottom-0 left-[15%] w-96 h-96 bg-teal/[0.1] rounded-full blur-[100px] anim-float2"></div>
       <svg class="absolute top-[30%] right-[5%] w-3 h-3 text-accent/[0.15] anim-float1" viewBox="0 0 12 12"><rect width="8" height="8" x="2" y="2" rx="1.5" fill="currentColor" transform="rotate(45 6 6)"/></svg>
       <svg class="absolute top-[70%] left-[8%] w-2.5 h-2.5 text-teal/[0.12] anim-float2" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>
     </div>
@@ -356,19 +373,26 @@ function deleteSheet(id, name) {
 // ══════════════════════════════════════════════════════════
 function renderToolbar() {
   const ghostBtn = 'inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]';
+  
   $('#toolbar-section').innerHTML = `
-  <div class="flex items-center justify-between mb-5 flex-wrap gap-2.5">
-    <div class="flex items-center gap-2">
+  <div class="flex items-center justify-between gap-4 mb-6 toolbar-inner flex-wrap">
+    <div class="flex flex-wrap items-center gap-2.5">
       <button class="${ghostBtn}" id="btn-add-entry">${I.plus} New Entry</button>
       <button class="${ghostBtn}" id="btn-export">${I.arrowDown} Export CSV</button>
-    </div>
-    <div class="flex items-center gap-2">
       <button class="${ghostBtn}" id="btn-email">${I.envelope} Email</button>
       <button class="${ghostBtn}" id="btn-share">${I.share} Share</button>
     </div>
+    <div class="relative w-full max-w-[280px]">
+      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-txt-3 [&_.ico]:w-4 [&_.ico]:h-4">${I.search}</div>
+      <input type="text" id="po-search" placeholder="Search PO numbers..." value="${esc(searchQuery)}" class="${TW.input} !pl-10 !py-2 text-[13px]" />
+    </div>
   </div>`;
 
-  $('#btn-add-entry').onclick = addEntry;
+  $('#po-search').oninput = (e) => { 
+    searchQuery = e.target.value.toLowerCase(); 
+    renderDashboard(); 
+  };
+  $('#btn-add-entry').onclick = addPO;
   $('#btn-export').onclick = exportCSV;
   $('#btn-email').onclick = openEmailModal;
   $('#btn-share').onclick = openShareModal;
@@ -380,9 +404,16 @@ function renderToolbar() {
 function groupByPO() {
   const groups = {};
   const order = [];
+  purchaseOrders.forEach(po => {
+    groups[po.po_number] = [];
+    order.push(po.po_number);
+  });
   cellData.forEach((row, idx) => {
     const po = row.po_number || 'Unassigned';
-    if (!groups[po]) { groups[po] = []; order.push(po); }
+    if (!groups[po]) {
+      groups[po] = [];
+      if (!order.includes(po)) order.push(po);
+    }
     groups[po].push({ ...row, _idx: idx });
   });
   return { groups, order };
@@ -392,60 +423,123 @@ function renderDashboard() {
   const { groups, order } = groupByPO();
   const section = $('#dashboard-section');
 
-  if (!cellData.length) {
+  if (!cellData.length && purchaseOrders.length === 0) {
     section.innerHTML = `
       <div class="text-center py-16 px-6 text-txt-3" style="margin-top:60px">
         <div class="mb-4 flex justify-center [&_.ico]:w-14 [&_.ico]:h-14 [&_.ico]:text-txt-3 [&_.ico]:opacity-40">${I.inbox}</div>
         <p class="text-[13px] mb-5 font-normal">No PO entries yet</p>
         <button class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]" id="btn-empty-add">${I.plus} Add first entry</button>
       </div>`;
-    section.querySelector('#btn-empty-add')?.addEventListener('click', addEntry);
+    const btnAdd = section.querySelector('#btn-empty-add');
+    if (btnAdd) btnAdd.onclick = () => addPO();
     return;
   }
 
-  let html = '<div class="flex flex-col gap-6">';
+  // BI Hero Section
+  let totalPoCount = order.length;
+  let globalHauled = 0;
+  let globalRemaining = 0;
+  let alertCount = 0;
+
+  order.forEach(po => {
+    const entries = groups[po];
+    const poInfo = purchaseOrders.find(p => p.po_number === po);
+    const start = poInfo ? parseNum(poInfo.starting_qty) : 0;
+    const last = entries.length ? parseNum(entries[entries.length - 1]?.running_balance) || 0 : start;
+    globalHauled += (isNaN(start) ? 0 : start - last);
+    globalRemaining += last;
+    // Only count as alert if there are hauling entries AND balance is at/below warn threshold
+    if (entries.length > 0) {
+      const thr = getThreshold(po);
+      if (last <= thr.warn) alertCount++;
+    }
+  });
+
+  const heroHtml = `
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 anim-fadeUp">
+    <div class="bg-surface border border-line p-5 rounded-[22px] shadow-sm flex flex-col gap-2">
+      <span class="text-[10px] font-bold text-txt-3 uppercase tracking-wider flex items-center gap-1.5">${I.chartBar} Total Active POs</span>
+      <span class="text-2xl font-bold text-txt tabular-nums tracking-tight">${totalPoCount}</span>
+    </div>
+    <div class="bg-surface border border-line p-5 rounded-[22px] shadow-sm flex flex-col gap-2">
+      <span class="text-[10px] font-bold text-txt-3 uppercase tracking-wider flex items-center gap-1.5">${I.bolt} Total Hauled</span>
+      <span class="text-2xl font-bold text-txt-2 tabular-nums tracking-tight">${fmt(globalHauled)}</span>
+    </div>
+    <div class="bg-surface border border-line p-5 rounded-[22px] shadow-sm flex flex-col gap-2">
+      <span class="text-[10px] font-bold text-txt-3 uppercase tracking-wider flex items-center gap-1.5">${I.inbox} Total Remaining</span>
+      <span class="text-2xl font-bold text-txt tabular-nums tracking-tight">${fmt(globalRemaining)}</span>
+    </div>
+    <div class="bg-surface border border-line p-5 rounded-[22px] shadow-sm flex flex-col gap-2">
+      <span class="text-[10px] font-bold text-txt-3 uppercase tracking-wider flex items-center gap-1.5">${I.bellAlert} Active Alerts</span>
+      <span class="text-2xl font-bold ${alertCount > 0 ? 'text-warn' : 'text-ok'} tabular-nums tracking-tight">${alertCount}</span>
+    </div>
+  </div>`;
+
+  let html = heroHtml + '<div class="flex flex-col gap-6">';
+  let visibleCount = 0;
+
   order.forEach(poNum => {
+    if (searchQuery && !poNum.toLowerCase().includes(searchQuery)) return;
+    visibleCount++;
     const entries = groups[poNum];
-    const startQty = parseNum(entries[0]?.starting_qty);           // original PO qty
+    const poInfo = purchaseOrders.find(p => p.po_number === poNum);
+    const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
     const lastEntry = entries[entries.length - 1];
-    const lastBal = parseNum(lastEntry?.running_balance) || 0;
+    const lastBal = entries.length ? parseNum(lastEntry?.running_balance) : startQty;
     const totalUsed = isNaN(startQty) ? 0 : startQty - lastBal;
     const pct = startQty > 0 ? Math.min(100, Math.round((totalUsed / startQty) * 100)) : 0;
 
     const thr = getThreshold(poNum);
-    let status = 'ok';
-    if (lastBal <= thr.danger) status = 'danger';
-    else if (lastBal <= thr.warn) status = 'warn';
+    let alertStatus = 'ok';
+    // Only show alert status if the PO actually has hauling entries
+    if (entries.length > 0) {
+      if (lastBal <= thr.danger) alertStatus = 'danger';
+      else if (lastBal <= thr.warn) alertStatus = 'warn';
+    }
 
-    const statColor = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[status];
+    // Progress bar color is always success-green (hauling is positive progress)
+    const progressColorStatus = 'ok';
+
+    const statusBadge = {
+      danger: `<span class="inline-flex items-center px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-danger/10 text-danger anim-pulse-danger border border-danger/20 ml-3">CRITICAL</span>`,
+      warn: `<span class="inline-flex items-center px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-warn/10 text-warn border border-warn/20 ml-3">WARNING</span>`,
+      ok: ''
+    }[alertStatus];
+
+    const statColor = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[alertStatus];
     const thCls = 'py-3 px-4 text-[10px] font-semibold text-txt-3 uppercase tracking-[0.6px] text-left border-b border-line bg-transparent whitespace-nowrap';
 
     html += `
     <div class="po-card bg-surface rounded-[28px] overflow-hidden anim-fadeUp transition-all duration-300 shadow-sm hover:border-line-lit hover:shadow-md" data-po="${esc(poNum)}">
-      <div class="flex items-center justify-between py-6 px-7 flex-wrap gap-4 bg-gradient-to-br from-surface to-surface-2 border-b border-line">
-        <div class="flex flex-col gap-1">
-          <div class="text-xl font-bold tracking-tight text-txt flex items-center">
-            <span class="text-xs text-txt-3 font-medium mr-3 bg-rose-400 px-2.5 py-1 rounded-full text-white">P.O. NUMBER</span>${esc(poNum)}
+      <div class="flex items-center justify-between py-6 px-7 flex-wrap gap-4 bg-surface border-b border-line">
+        <div class="flex flex-col gap-1.5">
+          <div class="text-lg font-bold tracking-tight text-txt flex items-center group">
+            <span class="text-[11px] text-white font-bold mr-3 bg-[#ff6b81] px-2.5 py-1 rounded-full uppercase tracking-wide">P.O. NUMBER</span>
+            ${esc(poNum)}
+            ${statusBadge}
           </div>
-          <div class="text-xs text-txt-3 font-medium flex items-center gap-3">
-            <span>${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}</span>
-            <button class="bg-transparent border-none text-rose-400 hover:text-rose-500 cursor-pointer flex items-center gap-1 text-[10px] uppercase font-bold tracking-wide transition-colors po-thr-btn" data-po="${esc(poNum)}">${I.cog} Set Threshold</button>
-            <button class="bg-transparent border-none text-txt-3 hover:text-danger cursor-pointer flex items-center gap-1 text-[10px] uppercase font-bold tracking-wide transition-colors po-del-btn" data-po="${esc(poNum)}">${I.trash} Delete PO</button>
+          ${poInfo && poInfo.waste_description ? `<div class="text-[11px] font-medium text-txt-2 tracking-wide uppercase mt-0.5">${esc(poInfo.waste_description)}</div>` : ''}
+          <div class="text-xs text-txt-3 font-medium flex items-center gap-4 mt-1">
+            <span class="flex items-center gap-1.5">${I.document} ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}</span>
+            <button class="po-thr-btn bg-transparent border-none text-rose-400 hover:text-rose-500 cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}">${I.cog} Set Threshold</button>
+            <button class="po-edit-btn bg-transparent border-none text-txt-3 hover:text-accent cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}">${I.pencil} Edit Details</button>
           </div>
         </div>
-        <div class="flex gap-9">
+        <div class="flex gap-9 items-center">
           <div class="flex flex-col gap-[3px] text-right">
-            <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[0.7px]">Starting Qty</span>
+            <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Starting Qty</span>
             <span class="po-stat-value text-[22px] font-bold tabular-nums tracking-tight">${isNaN(startQty) ? '--' : fmt(startQty)}</span>
           </div>
           <div class="flex flex-col gap-[3px] text-right">
-            <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[0.7px]">Remaining</span>
+            <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Remaining</span>
             <span class="po-stat-value text-[22px] font-bold tabular-nums tracking-tight ${statColor}">${fmt(lastBal)}</span>
           </div>
         </div>
       </div>
+
+      <div id="manage-${esc(poNum)}" class="hidden bg-surface-2 border-b border-line px-7 py-5 anim-fadeDown"></div>
       <div class="flex items-center gap-3.5 py-3.5 px-7 bg-surface-2">
-        <div class="flex-1 h-[7px] bg-surface-3 rounded-lg overflow-hidden"><div class="progress-${status} h-full rounded-lg transition-all duration-700" style="width:${pct}%"></div></div>
+        <div class="flex-1 h-[7px] bg-surface-3 rounded-lg overflow-hidden"><div class="progress-${progressColorStatus} h-full rounded-lg transition-all duration-700" style="width:${pct}%"></div></div>
         <span class="text-[11px] font-semibold text-txt-3 whitespace-nowrap min-w-[64px] text-right">${pct}% hauled</span>
       </div>
       <div class="overflow-x-auto">
@@ -465,7 +559,7 @@ function renderDashboard() {
             <th class="${thCls}"></th>
           </tr></thead>
           <tbody>
-            ${entries.map((e, ei) => {
+            ${entries.length > 0 ? entries.map((e, ei) => {
               const bal = parseNum(e.running_balance);
               let rowCls = '';
               const thr = getThreshold(poNum);
@@ -486,7 +580,7 @@ function renderDashboard() {
                 <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full placeholder:text-txt-3" value="${esc(e.invoice_no || '')}" data-ri="${e._idx}" data-col="invoice_no" placeholder="Invoice #"/></div></td>
                 <td class="w-11 text-center border-b border-line"><button class="row-del bg-transparent border-none text-txt-3 cursor-pointer p-[5px] rounded-lg transition-all duration-200 [&_.ico]:w-[15px] [&_.ico]:h-[15px] hover:text-danger hover:bg-danger/10" data-ri="${e._idx}" title="Delete">${I.trash}</button></td>
               </tr>`;
-            }).join('')}
+            }).join('') : `<tr><td colspan="7" class="py-8 text-center text-txt-3 text-[13px] border-b border-line">No hauling entries yet. Click "Add hauling to this PO" below.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -496,6 +590,15 @@ function renderDashboard() {
     </div>`;
   });
   html += '</div>';
+
+  if (searchQuery && visibleCount === 0) {
+    html = heroHtml + `
+      <div class="text-center py-16 px-6 text-txt-3 anim-fadeIn">
+        <div class="mb-4 flex justify-center [&_.ico]:w-14 [&_.ico]:h-14 [&_.ico]:text-txt-3 [&_.ico]:opacity-40">${I.search}</div>
+        <p class="text-[13px] font-normal">No PO matching "${esc(searchQuery)}"</p>
+      </div>`;
+  }
+
   section.innerHTML = html;
 
   // Bind events
@@ -504,9 +607,9 @@ function renderDashboard() {
     inp.addEventListener('blur', onCellBlur);
   });
   $$('.row-del').forEach(btn => { btn.onclick = () => deleteRow(Number(btn.dataset.ri)); });
-  $$('.po-add-entry').forEach(btn => { btn.onclick = () => addEntryToPO(btn.dataset.po); });
+  $$('.po-add-entry').forEach(btn => { btn.onclick = () => addHaulingToPO(btn.dataset.po); });
   $$('.po-thr-btn').forEach(btn => { btn.onclick = () => openThresholdModal(btn.dataset.po); });
-  $$('.po-del-btn').forEach(btn => { btn.onclick = () => deletePO(btn.dataset.po); });
+  $$('.po-edit-btn').forEach(btn => { btn.onclick = () => openPODrawer(btn.dataset.po); });
 
   // Bind date cells to shared datepicker
   initTableDatepickers();
@@ -534,12 +637,12 @@ window.updateFAB = () => {
 window._checkRow = (cb) => {
   const po = cb.dataset.po;
   if (!cb.checked) {
-    const master = document.querySelector(`.cb-master[data-po="${po}"]`);
+    const master = document.querySelector(`.cb-master[data-master-po="${po}"]`);
     if (master) master.checked = false;
   } else {
     const allRows = document.querySelectorAll(`.cb-row[data-po="${po}"]`);
     const checkedRows = document.querySelectorAll(`.cb-row[data-po="${po}"]:checked`);
-    const master = document.querySelector(`.cb-master[data-po="${po}"]`);
+    const master = document.querySelector(`.cb-master[data-master-po="${po}"]`);
     if (master && allRows.length === checkedRows.length) master.checked = true;
   }
   window.updateFAB();
@@ -557,16 +660,17 @@ document.addEventListener('DOMContentLoaded', () => {
     btnFabDelete.onclick = () => {
       const selectedCbs = document.querySelectorAll('.cb-row:checked');
       if (!selectedCbs.length) return;
-      showConfirm('Delete Selected?', `Are you sure you want to completely remove ${selectedCbs.length} items? This cannot be undone.`, () => {
+      const deletedCount = selectedCbs.length;
+      showConfirm('Delete Selected?', `Are you sure you want to completely remove ${deletedCount} items? This cannot be undone.`, () => {
         const toDeleteIds = new Set(Array.from(selectedCbs).map(cb => Number(cb.dataset.ri)));
-        // Filter out those indexes from cellData
         cellData = cellData.filter((_, idx) => !toDeleteIds.has(idx));
-        
         recomputeAllBalances();
+        // Reseed alert tracker so balance changes from deletion don't re-fire emails
+        silentReseedAlertKeys();
         renderDashboard();
         scheduleSave();
         checkAutoAlert();
-        toast(`Deleted ${selectedCbs.length} items`, 'warn');
+        toast(`Deleted ${deletedCount} items`, 'warn');
       });
     };
   }
@@ -642,15 +746,17 @@ function updateCardHeaders() {
   document.querySelectorAll('.po-card').forEach(card => {
     const po = card.dataset.po;
     const entries = groups[po];
-    if (!entries) return;
-    const startQty = parseNum(entries[0]?.starting_qty);
-    const lastBal = parseNum(entries[entries.length - 1]?.running_balance) || 0;
+    const poInfo = purchaseOrders.find(p => p.po_number === po);
+    const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
+    const lastBal = entries.length ? parseNum(entries[entries.length - 1]?.running_balance) : startQty;
     const totalUsed = isNaN(startQty) ? 0 : startQty - lastBal;
     const pct = startQty > 0 ? Math.min(100, Math.round((totalUsed / startQty) * 100)) : 0;
     const thr = getThreshold(po);
     let status = 'ok';
-    if (lastBal <= thr.danger) status = 'danger';
-    else if (lastBal <= thr.warn) status = 'warn';
+    if (entries && entries.length > 0) {
+      if (lastBal <= thr.danger) status = 'danger';
+      else if (lastBal <= thr.warn) status = 'warn';
+    }
 
     const statColor = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[status];
     const statValues = card.querySelectorAll('.po-stat-value');
@@ -665,56 +771,99 @@ function updateCardHeaders() {
 
 // ── Balance computation (per PO group) ───────────────────
 function recomputeAllBalances() {
+  const poMap = {};
+  purchaseOrders.forEach(po => {
+    poMap[po.po_number] = parseNum(po.starting_qty) || 0;
+  });
+
   const seen = {};
   cellData.forEach((row) => {
     const po = row.po_number || 'Unassigned';
     const qty = parseNum(row.quantity) || 0;
+    const startBal = poMap[po] || 0;
+    
     if (!seen[po]) {
-      let startBal = parseNum(row.starting_qty);
-      if (isNaN(startBal)) {
-        // legacy root-row: infer original starting amount
-        startBal = (parseNum(row.running_balance) || 0) + qty;
-      }
-      row.starting_qty = String(startBal); // persist so re-runs don't lose it
-      seen[po] = { initialBalance: startBal, runningTotal: qty };
+      seen[po] = { runningTotal: qty };
       row.running_balance = String(startBal - qty);
     } else {
       seen[po].runningTotal += qty;
-      row.running_balance = String(seen[po].initialBalance - seen[po].runningTotal);
+      row.running_balance = String(startBal - seen[po].runningTotal);
     }
   });
 }
 
 // ── Row operations ───────────────────────────────────────
-function addEntry() {
-  showAddEntryModal('');
+// ── Row operations ───────────────────────────────────────
+function addPO() {
+  showAddPOModal();
 }
 
-function addEntryToPO(poNum) {
-  showAddEntryModal(poNum);
+function addHaulingToPO(poNum) {
+  showAddHaulingModal(poNum);
 }
 
-function showAddEntryModal(defaultPO) {
+function showAddPOModal() {
   const overlay = document.createElement('div');
   overlay.className = TW.overlay;
   overlay.innerHTML = `
   <div class="${TW.modal}">
-    <h2 class="${TW.modalH2}">${I.plus} New Entry</h2>
-    <p class="${TW.modalSub}">Add a new hauling entry${defaultPO ? ` for <strong>${esc(defaultPO)}</strong>` : ''}</p>
-    <div class="${TW.field}"><label class="${TW.label}">P.O. No.</label><input id="ne-po" value="${esc(defaultPO)}" ${defaultPO ? 'readonly' : ''} placeholder="e.g. 21208720" class="${TW.input}"/></div>
-    ${!defaultPO ? `<div class="${TW.field}"><label class="${TW.label}">Starting PO Quantity <span class="text-txt-3 normal-case font-normal">(first entry only — total qty on PO)</span></label><input id="ne-balance" type="text" placeholder="e.g. 200,000" inputmode="decimal" class="${TW.input}"/></div>` : ''}
+    <h2 class="${TW.modalH2}">${I.plus} New Purchase Order</h2>
+    <p class="${TW.modalSub}">Create a new PO with its starting quantity</p>
+    <div class="${TW.field}"><label class="${TW.label}">P.O. No.</label><input id="npo-po" placeholder="e.g. 21208720" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Starting PO Quantity</label><input id="npo-qty" type="text" placeholder="e.g. 200,000" inputmode="decimal" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Waste Description (Optional)</label><input id="npo-desc" placeholder="e.g. Mixed Waste" class="${TW.input}"/></div>
+    <div class="${TW.modalActions}">
+      <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
+      <button class="${TW.primaryBtn}" id="modal-save">Create PO</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  const poInp = overlay.querySelector('#npo-po');
+  const qtyInp = overlay.querySelector('#npo-qty');
+  qtyInp.addEventListener('input', window._fmtCommaInput);
+
+  overlay.querySelector('#modal-save').onclick = () => {
+    const po = poInp.value.trim();
+    const qty = parseNum(qtyInp.value) || 0;
+    const desc = overlay.querySelector('#npo-desc').value.trim();
+    if (!po) return toast('PO Number required', 'warn');
+    if (qty <= 0) return toast('Starting quantity must be > 0', 'warn');
+
+    if (purchaseOrders.some(p => p.po_number === po)) {
+      return toast('PO already exists', 'warn');
+    }
+
+    purchaseOrders.push({ po_number: po, starting_qty: String(qty), waste_description: desc });
+    overlay.remove();
+    renderDashboard();
+    scheduleSave();
+    toast('PO Created', 'ok');
+  };
+  setTimeout(() => poInp.focus(), 100);
+}
+
+function showAddHaulingModal(poNum) {
+  const overlay = document.createElement('div');
+  overlay.className = TW.overlay;
+  overlay.innerHTML = `
+  <div class="${TW.modal}">
+    <h2 class="${TW.modalH2}">${I.plus} Add Hauling</h2>
+    <p class="${TW.modalSub}">Adding hauling entry for <strong>${esc(poNum)}</strong></p>
     <div class="${TW.field}"><label class="${TW.label}">Hauling Date</label>
-      <div class="c-datepicker relative" id="ne-dp">
-        <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal cursor-pointer rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 select-none has-value" id="ne-dp-trigger">
+      <div class="c-datepicker relative" id="nh-dp">
+        <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal cursor-pointer rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 select-none has-value" id="nh-dp-trigger">
           <svg class="ico shrink-0 cursor-pointer text-txt-3 hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
-          <input id="ne-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3" placeholder="MM-DD-YY or Select Date" value="${formatDateLong(new Date())}" />
+          <input id="nh-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3" placeholder="MM-DD-YY or Select Date" value="${formatDateLong(new Date())}" />
         </div>
-        <div class="c-cal" id="ne-dp-cal"></div>
+        <div class="c-cal" id="nh-dp-cal"></div>
       </div>
     </div>
     <div class="grid grid-cols-2 gap-3">
-      <div class="${TW.field}"><label class="${TW.label}">Quantity Hauled</label><input id="ne-qty" type="text" placeholder="0" inputmode="decimal" class="${TW.input}"/></div>
-      <div class="${TW.field}"><label class="${TW.label}">Invoice No.</label><input id="ne-invoice" placeholder="e.g. 193" class="${TW.input}"/></div>
+      <div class="${TW.field}"><label class="${TW.label}">Quantity Hauled</label><input id="nh-qty" type="text" placeholder="0" inputmode="decimal" class="${TW.input}"/></div>
+      <div class="${TW.field}"><label class="${TW.label}">Invoice No.</label><input id="nh-invoice" placeholder="e.g. 193" class="${TW.input}"/></div>
     </div>
     <div class="${TW.modalActions}">
       <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
@@ -725,103 +874,52 @@ function showAddEntryModal(defaultPO) {
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-  // Init custom datepicker on modal
-  initDatepicker('ne-dp', false);
+  initDatepicker('nh-dp', false);
   const now = new Date();
-  selectDay('ne-dp', now.getFullYear(), now.getMonth(), now.getDate());
+  selectDay('nh-dp', now.getFullYear(), now.getMonth(), now.getDate());
 
-  const neDateInp = overlay.querySelector('#ne-dp-label');
-  const handleDateBlur = () => {
-    const val = neDateInp.value.trim();
-    if (!val) return;
-    const parsed = parseFlexibleDate(val);
-    if (parsed) {
-      selectDay('ne-dp', parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-    } else {
-      // Revert to current selected if invalid
-      const s = dpState['ne-dp']?.selected || new Date();
-      neDateInp.value = formatDateLong(s);
-    }
-  };
-  neDateInp.onblur = handleDateBlur;
-  neDateInp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleDateBlur(); neDateInp.blur(); } };
-  neDateInp.onfocus = () => neDateInp.select();
-
-  // Trigger calendar open only on icon click or label click (but input focus is separate)
-  overlay.querySelector('#ne-dp-trigger').onclick = (e) => {
-    // If user clicked exactly the input, don't toggle the calendar (let them type)
-    if (e.target.id === 'ne-dp-label') return;
-    // Otherwise open/toggle
-    if (window._toggleDp) window._toggleDp('ne-dp');
-  };
-
-  // Input formatters for thousands separator
-  const fmtInput = (e) => {
-    let val = e.target.value.replace(/[^0-9.]/g, '');
-    const parts = val.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    e.target.value = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
-  };
-  const qtyInput = overlay.querySelector('#ne-qty');
-  if (qtyInput) qtyInput.addEventListener('input', fmtInput);
-  const balInput = overlay.querySelector('#ne-balance');
-  if (balInput) balInput.addEventListener('input', fmtInput);
+  const qInp = overlay.querySelector('#nh-qty');
+  qInp.addEventListener('input', window._fmtCommaInput);
+  setTimeout(() => qInp.focus(), 100);
 
   overlay.querySelector('#modal-save').onclick = () => {
-    const po = overlay.querySelector('#ne-po').value.trim();
-    if (!po) { toast('P.O. No. is required', 'warn'); return; }
-    
-    const qtyStr = overlay.querySelector('#ne-qty').value.trim();
-    if (!qtyStr) { toast('Quantity Hauled is required', 'warn'); return; }
-    const qty = parseFloat(qtyStr.replace(/,/g, '')) || 0;
-    if (qty <= 0) { toast('Please enter a valid quantity', 'warn'); return; }
+    const qty = parseNum(qInp.value) || 0;
+    if (qty <= 0) return toast('Valid quantity required', 'warn');
 
-    const dpS = dpState['ne-dp'];
+    const dpS = dpState['nh-dp'];
     let selDate = '';
     if (dpS?.selected) {
       selDate = dpS.selected.getFullYear() + '-' + 
                 String(dpS.selected.getMonth() + 1).padStart(2, '0') + '-' + 
                 String(dpS.selected.getDate()).padStart(2, '0');
     } else {
-      selDate = new Date().getFullYear() + '-' + 
-                String(new Date().getMonth() + 1).padStart(2, '0') + '-' + 
-                String(new Date().getDate()).padStart(2, '0');
+      selDate = new Date().toISOString().slice(0, 10);
     }
 
-    const row = {
-      po_number:       po,
-      hauling_date:    selDate,
-      quantity:        String(qty),
+    cellData.push({
+      po_number: poNum,
+      hauling_date: selDate,
+      quantity: String(qty),
       running_balance: '',
-      invoice_no:      overlay.querySelector('#ne-invoice').value.trim(),
-    };
+      invoice_no: overlay.querySelector('#nh-invoice').value.trim()
+    });
 
-    // Determine initial balance (total PO quantity)
-    const existing = cellData.filter(r => r.po_number === po);
-    if (!existing.length) {
-      // First entry for this PO — set starting quantity
-      const initBalStr = overlay.querySelector('#ne-balance')?.value.trim() || '0';
-      const initBal = parseFloat(initBalStr.replace(/,/g, '')) || 0;
-      row.starting_qty = String(initBal);
-      row.running_balance = String(initBal);
-    }
-
-    cellData.push(row);
     recomputeAllBalances();
     overlay.remove();
     renderDashboard();
     scheduleSave();
     checkAutoAlert();
-    toast('Entry added', 'ok');
+    toast('Hauling added', 'ok');
   };
-
-  setTimeout(() => overlay.querySelector(defaultPO ? '#ne-qty' : '#ne-po')?.focus(), 100);
 }
+
 
 function deleteRow(ri) {
   showConfirm('Delete entry?', `Remove this hauling entry?`, () => {
     cellData.splice(ri, 1);
     recomputeAllBalances();
+    // Reseed alert tracker so balance shift from deletion doesn't re-fire emails
+    silentReseedAlertKeys();
     renderDashboard();
     scheduleSave();
     checkAutoAlert();
@@ -832,6 +930,7 @@ function deleteRow(ri) {
 function deletePO(poNum) {
   showConfirm('Delete PO completely?', `Are you sure you want to permanently delete PO ${esc(poNum)} and ALL of its hauling entries?`, () => {
     cellData = cellData.filter(r => r.po_number !== poNum);
+    purchaseOrders = purchaseOrders.filter(p => p.po_number !== poNum);
     
     // Also cleanup threshold if it exists
     if (thresholds[poNum]) {
@@ -852,7 +951,7 @@ function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     if (!activeSheet) return;
-    try { await api.data.saveRows(activeSheet, cellData); }
+    try { await api.data.saveRows(activeSheet, cellData, purchaseOrders); }
     catch (err) { toast(`Save failed: ${err.message}`, 'danger'); }
   }, 1500);
 }
@@ -868,11 +967,12 @@ function getAlertRows() {
     if (!entries || !entries.length) return;
     const lastEntry = entries[entries.length - 1];
     const bv = parseNum(lastEntry.running_balance);
-    if (isNaN(bv) || bv === 0) return;
+    if (isNaN(bv)) return;
     const thr = getThreshold(po);
     const ri = lastEntry._idx;
 
-    const startingQty = parseNum(entries[0].starting_qty) || 0;
+    const poInfo = purchaseOrders.find(p => p.po_number === po);
+    const startingQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
     const lastDate = lastEntry.hauling_date || 'N/A';
     const totalUsed = entries.reduce((sum, r) => sum + (parseNum(r.quantity) || 0), 0);
     const lastQty = parseNum(lastEntry.quantity) || 0;
@@ -885,16 +985,47 @@ function getAlertRows() {
 }
 
 let alertDebounce = null;
+
+// Silently sync lastAlertKey to current state without firing any email.
+// Call this before checkAutoAlert() after non-hauling changes (deletes, threshold tweaks)
+// so balance changes don't get mistaken for new alert triggers.
+function silentReseedAlertKeys() {
+  const current = getAlertRows();
+  // Update keys for POs still in alert
+  current.forEach(a => { lastAlertKey[a.po] = `${a.level}:${a.bv}`; });
+  // Remove keys for POs that are no longer in alert
+  Object.keys(lastAlertKey).forEach(po => {
+    if (!current.find(a => a.po === po)) delete lastAlertKey[po];
+  });
+}
+
 function checkAutoAlert() {
   clearTimeout(alertDebounce);
   alertDebounce = setTimeout(async () => {
-    const al = getAlertRows();
-    if (!al.length) { lastAlertKey = ''; return; }
-    const key = al.map(a => `${a.po}:${a.level}:${a.bv}`).join('|');
-    if (key === lastAlertKey) return;
-    if (!emailCfg.to) return;
-    lastAlertKey = key;
-    await triggerEmail(al);
+    const currentAlerts = getAlertRows();
+    if (!currentAlerts.length) { 
+      lastAlertKey = {}; 
+      return; 
+    }
+    
+    // Identify NEW alerts, UPSCALED alerts, OR same level but balance dropped further (new hauling entry)
+    const newAlerts = currentAlerts.filter(a => {
+      const state = lastAlertKey[a.po];            // e.g. "WARNING:3000"
+      if (!state) return true;                     // First time this PO hits an alert
+      const [prevLevel, prevBv] = state.split(':');
+      if (prevLevel !== a.level) return true;      // Level escalated (WARN → DANGER)
+      if (parseFloat(prevBv) !== a.bv) return true; // Same level, but balance changed (new entry added)
+      return false;
+    });
+
+    // Update the tracker for ALL currently active alerts to keep them silent
+    currentAlerts.forEach(a => {
+      lastAlertKey[a.po] = `${a.level}:${a.bv}`;
+    });
+
+    if (newAlerts.length > 0 && emailCfg.to) {
+      await triggerEmail(newAlerts);
+    }
   }, 2000);
 }
 
@@ -902,6 +1033,7 @@ async function triggerEmail(al) {
   const sheetName = sheets.find(s => s.id === activeSheet)?.name || '';
   const payload = al.map(a => {
     const thr = getThreshold(a.po);
+    const poInfo = purchaseOrders.find(p => p.po_number === a.po);
     return { 
       po: a.po || `Row ${a.ri + 1}`, 
       level: a.level, 
@@ -910,6 +1042,7 @@ async function triggerEmail(al) {
       lastQty: a.lastQty,
       lastDate: a.lastDate,
       totalUsed: a.totalUsed,
+      wasteDescription: poInfo?.waste_description || '',
       threshold: { danger: thr.danger, warn: thr.warn },
     };
   });
@@ -1048,6 +1181,130 @@ function showConfirm(title, text, onConfirm) {
   overlay.querySelector('#modal-confirm').onclick = async () => { overlay.remove(); await onConfirm(); };
 }
 
+function openPODrawer(poNum) {
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] anim-fadeIn';
+  
+  const entries = groupByPO().groups[poNum] || [];
+  const poInfo = purchaseOrders.find(p => p.po_number === poNum);
+  const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
+
+  overlay.innerHTML = `
+  <div class="absolute inset-y-0 right-0 w-full max-w-[420px] bg-surface shadow-2xl border-l border-line flex flex-col transform transition-transform duration-300 translate-x-full po-drawer-content">
+    <div class="p-8 flex items-center justify-between border-b border-line">
+      <div>
+        <h2 class="text-lg font-bold text-txt flex items-center gap-2.5">${I.pencil} Edit PO Details</h2>
+        <p class="text-[11px] text-txt-3 font-semibold uppercase tracking-widest mt-1">PO # ${esc(poNum)}</p>
+      </div>
+      <button class="p-2 text-txt-3 hover:text-txt cursor-pointer rounded-lg hover:bg-surface-2 transition-colors" id="drawer-close">${I.xMark}</button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-8 space-y-8">
+      <div class="space-y-6">
+        <div class="${TW.field}">
+          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-2.5">P.O. Number Identification</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-txt-3">${I.document}</span>
+            <input id="d-po" type="text" value="${esc(poNum)}" class="${TW.input} !pl-10 !h-[48px] text-[15px] shadow-sm"/>
+          </div>
+          <p class="text-[10px] text-txt-3 mt-1.5">This will update the ID across all ${entries.length} hauling entries.</p>
+        </div>
+
+        <div class="${TW.field}">
+          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-2.5">Initial Starting Quantity</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-txt-3">${I.bolt}</span>
+            <input id="d-qty" type="text" value="${startQty.toLocaleString('en-US')}" inputmode="decimal" class="${TW.input} !pl-10 !h-[48px] text-[15px] shadow-sm"/>
+          </div>
+          <p class="text-[10px] text-txt-3 mt-1.5">Editing this will recalculate all running balances for this PO card.</p>
+        </div>
+        
+        <div class="${TW.field}">
+          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-2.5">Waste Description</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-txt-3">${I.document}</span>
+            <input id="d-desc" type="text" value="${esc(poInfo?.waste_description || '')}" class="${TW.input} !pl-10 !h-[48px] text-[15px] shadow-sm"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="pt-8 border-t border-line">
+        <div class="bg-danger/5 border border-danger/20 rounded-[20px] p-6 space-y-4">
+           <div class="flex items-center gap-2.5 text-danger font-bold text-[13px]">
+             ${I.trash} DANGER ZONE
+           </div>
+           <p class="text-[11px] text-danger/80 font-medium">Removing this PO will permanently delete it and all its associated hauling records. This action cannot be undone.</p>
+           <button class="w-full py-3 bg-danger text-white rounded-xl font-bold text-xs shadow-md hover:bg-danger-dark transition-all" id="drawer-delete">Delete Entire PO</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-8 border-t border-line bg-surface-2">
+      <button class="w-full py-4 bg-accent text-white rounded-xl font-semibold text-[13px] shadow-lg shadow-accent/20 hover:bg-accent-2 transition-all transform hover:-translate-y-0.5" id="drawer-save">Save All Changes</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+  
+  const content = overlay.querySelector('.po-drawer-content');
+  setTimeout(() => content.style.transform = 'translateX(0)', 10);
+
+  const qInp = overlay.querySelector('#d-qty');
+  qInp.addEventListener('input', window._fmtCommaInput);
+
+  const close = () => {
+    content.style.transform = 'translateX(100%)';
+    setTimeout(() => overlay.remove(), 300);
+  };
+
+  overlay.querySelector('#drawer-close').onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+
+  overlay.querySelector('#drawer-delete').onclick = () => {
+    close();
+    deletePO(poNum);
+  };
+
+  overlay.querySelector('#drawer-save').onclick = async () => {
+    const btn = overlay.querySelector('#drawer-save');
+    const newPO = overlay.querySelector('#d-po').value.trim();
+    const newQty = parseNum(qInp.value) || 0;
+    const newDesc = overlay.querySelector('#d-desc').value.trim();
+
+    if (!newPO) return toast('PO Number required', 'warn');
+
+    btn.disabled = true;
+    btn.textContent = 'Saving Changes...';
+
+    if (poInfo) {
+      poInfo.po_number = newPO;
+      poInfo.starting_qty = String(newQty);
+      poInfo.waste_description = newDesc;
+    }
+
+    cellData.forEach(row => {
+      if (row.po_number === poNum) {
+        row.po_number = newPO;
+      }
+    });
+
+    if (activeSheet) {
+      try {
+        await api.data.saveRows(activeSheet, cellData, purchaseOrders);
+        toast('PO Updated Successfully', 'ok');
+        close();
+        recomputeAllBalances();
+        renderDashboard();
+      } catch (err) {
+        toast('Error saving rows', 'danger');
+        btn.disabled = false;
+        btn.textContent = 'Save All Changes';
+      }
+    }
+  };
+}
+
 function openThresholdModal(poNum = '*') {
   const overlay = document.createElement('div');
   overlay.className = TW.overlay;
@@ -1063,25 +1320,40 @@ function openThresholdModal(poNum = '*') {
   <div class="${TW.modal}">
     <h2 class="${TW.modalH2}">${I.cog} ${esc(displayTitle)}</h2>
     <p class="${TW.modalSub}">${esc(displaySub)}</p>
-    <div class="${TW.field}"><label class="${TW.label}">Warning Level (balance &le;)</label><input id="thr-warn" type="number" value="${thr.warn}" class="${TW.input}"/></div>
-    <div class="${TW.field}"><label class="${TW.label}">Danger Level (balance &le;)</label><input id="thr-danger" type="number" value="${thr.danger}" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Warning Level (balance &le;)</label><input id="thr-warn" type="text" value="${thr.warn.toLocaleString('en-US')}" inputmode="decimal" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Danger Level (balance &le;)</label><input id="thr-danger" type="text" value="${thr.danger.toLocaleString('en-US')}" inputmode="decimal" class="${TW.input}"/></div>
     <div class="${TW.modalActions}">
       <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
       <button class="${TW.primaryBtn}" id="modal-save">Save</button>
     </div>
   </div>`;
   document.body.appendChild(overlay);
+
+  overlay.querySelector('#thr-warn').addEventListener('input', window._fmtCommaInput);
+  overlay.querySelector('#thr-danger').addEventListener('input', window._fmtCommaInput);
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   overlay.querySelector('#modal-save').onclick = async () => {
-    const w = parseFloat(overlay.querySelector('#thr-warn').value) || 1000;
-    const d = parseFloat(overlay.querySelector('#thr-danger').value) || 0;
+    const w = parseNum(overlay.querySelector('#thr-warn').value) || 0;
+    const d = parseNum(overlay.querySelector('#thr-danger').value) || 0;
     thresholds[poNum].warn = w;
     thresholds[poNum].danger = d;
-    lastAlertKey = '';
+
+    // Reseed lastAlertKey with the current state under the NEW threshold
+    // so checkAutoAlert won't re-fire for data that hasn't changed.
+    const currentAlerts = getAlertRows();
+    currentAlerts.forEach(a => {
+      lastAlertKey[a.po] = `${a.level}:${a.bv}`;
+    });
+    // If this PO is no longer in alert under the new threshold, clear its key
+    if (!currentAlerts.find(a => a.po === poNum)) {
+      delete lastAlertKey[poNum];
+    }
+
     if (activeSheet) await api.data.saveThreshold(activeSheet, { po_number: poNum, warn: w, danger: d });
     overlay.remove();
-    updateComputedCells();
+    recomputeAllBalances();
+    renderDashboard();
     checkAutoAlert();
     toast('Threshold updated', 'ok');
   };
@@ -1429,6 +1701,13 @@ function parseNum(v) { return parseFloat(String(v ?? '').replace(/,/g, '')); }
 function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function fmtNum(n) { return isNaN(n) ? '' : fmt(n); }
 function numDisplay(v) { const n = parseNum(v); return isNaN(n) || n === 0 ? '' : fmtNum(n); }
+
+window._fmtCommaInput = (e) => {
+  let val = e.target.value.replace(/[^0-9.]/g, '');
+  const parts = val.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  e.target.value = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
+};
 
 function dateToInput(val) {
   if (!val) return '';

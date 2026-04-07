@@ -22,10 +22,10 @@ router.put('/:sheetId/columns', async (req, res) => {
   res.json({ success: true });
 });
 
-// PUT /data/:sheetId/rows — save all PO entries (batch)
+// PUT /data/:sheetId/rows — save all PO entries & purchase orders (batch)
 router.put('/:sheetId/rows', async (req, res) => {
   const { sheetId } = req.params;
-  const { cellData } = req.body;
+  const { cellData, purchaseOrders } = req.body;
   if (!Array.isArray(cellData)) return res.status(400).json({ error: 'cellData must be an array' });
   if (!await ownsSheet(req.user.id, sheetId)) return res.status(403).json({ error: 'Access denied' });
 
@@ -33,24 +33,41 @@ router.put('/:sheetId/rows', async (req, res) => {
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM po_entries WHERE sheet_id = $1', [sheetId]);
+    await client.query('DELETE FROM purchase_orders WHERE sheet_id = $1', [sheetId]);
 
+    // 1. Save Purchase Orders
+    if (Array.isArray(purchaseOrders) && purchaseOrders.length > 0) {
+      const poCols = ['sheet_id', 'po_number', 'starting_qty', 'waste_description'];
+      const poValues = [];
+      const poParams = [];
+      let pi = 1;
+      for (const po of purchaseOrders) {
+        poValues.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++})`);
+        poParams.push(sheetId, po.po_number ?? '', po.starting_qty ?? '0', po.waste_description ?? '');
+      }
+      await client.query(
+        `INSERT INTO purchase_orders (${poCols.join(', ')}) VALUES ${poValues.join(', ')}`,
+        poParams
+      );
+    }
+
+    // 2. Save Entries
     if (cellData.length > 0) {
-      const cols = ['sheet_id', 'position', 'po_number', 'hauling_date', 'quantity', 'running_balance', 'invoice_no', 'starting_qty'];
+      const cols = ['sheet_id', 'position', 'po_number', 'hauling_date', 'quantity', 'running_balance', 'invoice_no'];
       const values = [];
       const params = [];
       let pi = 1;
 
       for (let i = 0; i < cellData.length; i++) {
         const r = cellData[i];
-        values.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
+        values.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
         params.push(
           sheetId, i,
           r.po_number       ?? '',
           r.hauling_date    ?? '',
           r.quantity        ?? '',
           r.running_balance ?? '',
-          r.invoice_no      ?? '',
-          r.starting_qty    ?? ''
+          r.invoice_no      ?? ''
         );
       }
 
