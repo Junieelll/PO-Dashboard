@@ -10,13 +10,7 @@ dns.setDefaultResultOrder('ipv4first');
 
 // Parse the DATABASE_URL and build config with explicit options
 const connStr = process.env.DATABASE_URL || '';
-let url;
-try {
-  url = new URL(connStr);
-} catch (e) {
-  console.error('\n❌ CRITICAL ERROR: DATABASE_URL is missing or invalid in your hosting environment variables.\n');
-  process.exit(1);
-}
+const url = new URL(connStr);
 
 const pool = new Pool({
   host: url.hostname,
