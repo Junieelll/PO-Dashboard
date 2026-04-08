@@ -1,0 +1,23 @@
+{
+  "name": "Purchase Order Tracker",
+  "short_name": "PO Tracker",
+  "description": "Streamlined Purchase Order balance tracking and notifications.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c5cfc",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa_icon_512.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa_icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

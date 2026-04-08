@@ -2060,7 +2060,7 @@ document.addEventListener('mousedown', e => {
 // ══════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════
-if (localStorage.getItem('po_theme') === 'light') {
+if (localStorage.getItem('po_theme') !== 'dark') {
   document.body.classList.add('light');
 }
 

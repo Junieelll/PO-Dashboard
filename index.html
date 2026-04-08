@@ -10,6 +10,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#7c5cfc"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="PO Tracker"/>
+<link rel="apple-touch-icon" href="/pwa_icon_512.png"/>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        console.log('PO Tracker SW registered:', reg);
+      }).catch(err => {
+        console.error('PO Tracker SW failed:', err);
+      });
+    });
+  }
+</script>
+
 <script>
 tailwind.config = {
   theme: {
