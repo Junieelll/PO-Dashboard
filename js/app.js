@@ -71,6 +71,32 @@ const TW = {
 };
 
 // ══════════════════════════════════════════════════════════
+//  BUTTON LOADING UTILITY
+// ══════════════════════════════════════════════════════════
+/**
+ * Toggle a button's loading state.
+ * @param {HTMLButtonElement} btn
+ * @param {boolean} isLoading
+ * @param {string|null} originalHtml - stored/restored HTML; pass null to auto-capture on first call
+ * @returns {string} the captured originalHtml (so callers can restore it)
+ */
+function setButtonLoading(btn, isLoading, originalHtml = null) {
+  if (!btn) return originalHtml;
+  if (isLoading) {
+    const captured = btn.innerHTML;
+    btn.setAttribute('data-loading', 'true');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn-spinner"></span>`;
+    return captured;
+  } else {
+    btn.removeAttribute('data-loading');
+    btn.disabled = false;
+    if (originalHtml !== null) btn.innerHTML = originalHtml;
+    return originalHtml;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
 //  TOAST
 // ══════════════════════════════════════════════════════════
 function toast(msg, type = 'ok') {
@@ -152,7 +178,7 @@ function renderAuth(isLogin = true) {
 
 async function doAuth(isLogin) {
   const btn = $('#a-submit');
-  btn.disabled = true; btn.textContent = 'Please wait…';
+  const origHtml = setButtonLoading(btn, true);
   const errEl = $('#auth-err');
   errEl.innerHTML = '';
   try {
@@ -169,15 +195,30 @@ async function doAuth(isLogin) {
     boot();
   } catch (err) {
     errEl.innerHTML = `<div class="bg-danger/[0.08] border border-danger/[0.18] text-danger rounded-xl py-2.5 px-3.5 text-[13px] mb-4 anim-shake">${esc(err.message)}</div>`;
-    btn.disabled = false;
-    btn.textContent = isLogin ? 'Sign In' : 'Create Account';
+    setButtonLoading(btn, false, origHtml);
   }
 }
 
 // ══════════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════════
+function renderBootSkeleton() {
+  app().innerHTML = `
+  <div class="app-skeleton">
+    <div class="flex items-center gap-2.5 text-accent font-bold text-base mb-4">
+      <span class="btn-spinner" style="width:18px;height:18px;border-width:2.5px"></span>
+      Loading PO Tracker…
+    </div>
+    <div class="flex flex-col gap-3 w-[260px]">
+      <div class="skeleton-bar w-full"></div>
+      <div class="skeleton-bar" style="width:75%"></div>
+      <div class="skeleton-bar" style="width:55%"></div>
+    </div>
+  </div>`;
+}
+
 async function boot() {
+  renderBootSkeleton();
   try {
     if (!user) { const me = await api.auth.me(); user = me; }
   } catch {
@@ -333,8 +374,14 @@ function renderTabs() {
   el.querySelectorAll('button[data-id]').forEach(btn => {
     btn.onclick = async () => {
       if (Number(btn.dataset.id) === activeSheet) return;
-      await loadSheet(Number(btn.dataset.id));
-      renderTabs(); renderToolbar(); renderDashboard(); renderAlertLog();
+      const origHtml = setButtonLoading(btn, true);
+      try {
+        await loadSheet(Number(btn.dataset.id));
+        renderTabs(); renderToolbar(); renderDashboard(); renderAlertLog();
+      } catch (err) {
+        toast('Failed to switch sheet: ' + err.message, 'danger');
+        setButtonLoading(btn, false, origHtml);
+      }
     };
     btn.ondblclick = () => renameSheet(Number(btn.dataset.id), btn.textContent.trim());
     btn.oncontextmenu = (e) => { e.preventDefault(); if (sheets.length > 1) deleteSheet(Number(btn.dataset.id), btn.textContent.trim()); };
@@ -1187,9 +1234,10 @@ function showModal(title, label, defaultVal, onSave) {
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   const save = async () => {
     const v = inp.value.trim(); if (!v) return;
-    overlay.querySelector('#modal-save').disabled = true;
+    const saveBtn = overlay.querySelector('#modal-save');
+    const origHtml = setButtonLoading(saveBtn, true);
     try { await onSave(v); overlay.remove(); }
-    catch (err) { toast(err.message, 'danger'); overlay.querySelector('#modal-save').disabled = false; }
+    catch (err) { toast(err.message, 'danger'); setButtonLoading(saveBtn, false, origHtml); }
   };
   overlay.querySelector('#modal-save').onclick = save;
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
@@ -1210,7 +1258,19 @@ function showConfirm(title, text, onConfirm) {
   document.body.appendChild(overlay);
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-  overlay.querySelector('#modal-confirm').onclick = async () => { overlay.remove(); await onConfirm(); };
+  overlay.querySelector('#modal-confirm').onclick = async () => {
+    const confirmBtn = overlay.querySelector('#modal-confirm');
+    const origHtml = setButtonLoading(confirmBtn, true);
+    try {
+      overlay.querySelector('#modal-cancel').disabled = true;
+      await onConfirm();
+      overlay.remove();
+    } catch (err) {
+      toast(err.message || 'Action failed', 'danger');
+      setButtonLoading(confirmBtn, false, origHtml);
+      overlay.querySelector('#modal-cancel').disabled = false;
+    }
+  };
 }
 
 function openPODrawer(poNum) {
@@ -1306,8 +1366,7 @@ function openPODrawer(poNum) {
 
     if (!newPO) return toast('PO Number required', 'warn');
 
-    btn.disabled = true;
-    btn.textContent = 'Saving Changes...';
+    const origHtml = setButtonLoading(btn, true);
 
     if (poInfo) {
       poInfo.po_number = newPO;
@@ -1329,10 +1388,14 @@ function openPODrawer(poNum) {
         recomputeAllBalances();
         renderDashboard();
       } catch (err) {
-        toast('Error saving rows', 'danger');
-        btn.disabled = false;
-        btn.textContent = 'Save All Changes';
+        toast('Error saving changes: ' + err.message, 'danger');
+        setButtonLoading(btn, false, origHtml);
       }
+    } else {
+      // No activeSheet — still do local update
+      close();
+      recomputeAllBalances();
+      renderDashboard();
     }
   };
 }
@@ -1366,6 +1429,7 @@ function openThresholdModal(poNum = '*') {
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   overlay.querySelector('#modal-save').onclick = async () => {
+    const saveBtn = overlay.querySelector('#modal-save');
     const w = parseNum(overlay.querySelector('#thr-warn').value) || 0;
     const d = parseNum(overlay.querySelector('#thr-danger').value) || 0;
     thresholds[poNum].warn = w;
@@ -1382,12 +1446,18 @@ function openThresholdModal(poNum = '*') {
       delete lastAlertKey[poNum];
     }
 
-    if (activeSheet) await api.data.saveThreshold(activeSheet, { po_number: poNum, warn: w, danger: d });
-    overlay.remove();
-    recomputeAllBalances();
-    renderDashboard();
-    checkAutoAlert();
-    toast('Threshold updated', 'ok');
+    const origHtml = setButtonLoading(saveBtn, true);
+    try {
+      if (activeSheet) await api.data.saveThreshold(activeSheet, { po_number: poNum, warn: w, danger: d });
+      overlay.remove();
+      recomputeAllBalances();
+      renderDashboard();
+      checkAutoAlert();
+      toast('Threshold updated', 'ok');
+    } catch (err) {
+      toast('Failed to save threshold: ' + err.message, 'danger');
+      setButtonLoading(saveBtn, false, origHtml);
+    }
   };
 }
 
@@ -1411,19 +1481,35 @@ function openEmailModal() {
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   overlay.querySelector('#btn-test').onclick = async () => {
+    const testBtn = overlay.querySelector('#btn-test');
     const to = overlay.querySelector('#em-to').value.trim();
     if (!to) return toast('Enter an email first', 'warn');
-    try { await api.email.test(to); toast(`Test sent to ${to}`, 'ok'); } catch (err) { toast(err.message, 'danger'); }
+    const origHtml = setButtonLoading(testBtn, true);
+    try {
+      await api.email.test(to);
+      toast(`Test sent to ${to}`, 'ok');
+    } catch (err) {
+      toast(err.message, 'danger');
+    } finally {
+      setButtonLoading(testBtn, false, origHtml);
+    }
   };
   overlay.querySelector('#modal-save').onclick = async () => {
+    const saveBtn = overlay.querySelector('#modal-save');
+    const origHtml = setButtonLoading(saveBtn, true);
     emailCfg = {
       to:   overlay.querySelector('#em-to').value.trim(),
       name: overlay.querySelector('#em-name').value.trim() || 'PO Tracker System',
       subj: overlay.querySelector('#em-subj').value.trim() || '[ALERT] PO Balance Warning',
     };
-    if (activeSheet) await api.data.saveEmail(activeSheet, emailCfg);
-    overlay.remove();
-    toast('Email settings saved', 'ok');
+    try {
+      if (activeSheet) await api.data.saveEmail(activeSheet, emailCfg);
+      overlay.remove();
+      toast('Email settings saved', 'ok');
+    } catch (err) {
+      toast('Failed to save email settings: ' + err.message, 'danger');
+      setButtonLoading(saveBtn, false, origHtml);
+    }
   };
 }
 
@@ -1509,6 +1595,7 @@ async function openShareModal() {
   // Load existing links
   async function loadExistingLinks() {
     const container = overlay.querySelector('#share-existing');
+    container.innerHTML = `<div class="flex items-center justify-center py-4 gap-2 text-txt-3 text-xs"><span class="btn-spinner" style="width:12px;height:12px;border-width:1.5px"></span> Loading links…</div>`;
     try {
       const { links } = await api.share.list(activeSheet);
       if (!links || links.length === 0) {
@@ -1556,11 +1643,15 @@ async function openShareModal() {
       // Bind delete buttons
       container.querySelectorAll('.share-del-btn').forEach(btn => {
         btn.onclick = async () => {
+          const origHtml = setButtonLoading(btn, true);
           try {
             await api.share.revokeOne(activeSheet, btn.dataset.token);
             toast('Link deleted', 'warn');
             loadExistingLinks();
-          } catch (err) { toast(err.message, 'danger'); }
+          } catch (err) {
+            toast(err.message, 'danger');
+            setButtonLoading(btn, false, origHtml);
+          }
         };
       });
     } catch (err) {
@@ -1572,7 +1663,7 @@ async function openShareModal() {
   // Generate new link
   overlay.querySelector('#btn-generate').onclick = async () => {
     const btn = overlay.querySelector('#btn-generate');
-    btn.disabled = true; btn.textContent = 'Generating...';
+    const origHtml = setButtonLoading(btn, true);
     try {
       const label = overlay.querySelector('#share-label').value.trim();
       const days = parseInt(expiryVal);
@@ -1587,7 +1678,10 @@ async function openShareModal() {
             <button class="${TW.ghostBtn} !min-w-0 shrink-0" id="btn-copy">${I.clipCopy} Copy</button>
           </div>
         </div>`;
-      btn.textContent = 'Generated';
+      // Show checkmark icon briefly then restore
+      btn.removeAttribute('data-loading');
+      btn.disabled = false;
+      btn.innerHTML = `${I.checkCircle} Generated`;
       overlay.querySelector('#btn-copy').onclick = () => {
         navigator.clipboard.writeText(url).then(() => {
           toast('Link copied to clipboard', 'ok');
@@ -1597,7 +1691,10 @@ async function openShareModal() {
       toast('Share link generated', 'ok');
       // Refresh the existing links list
       loadExistingLinks();
-    } catch (err) { toast(err.message, 'danger'); btn.disabled = false; btn.textContent = 'Generate Link'; }
+    } catch (err) {
+      toast(err.message, 'danger');
+      setButtonLoading(btn, false, origHtml);
+    }
   };
 }
 

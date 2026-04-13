@@ -227,6 +227,48 @@ tailwind.config = {
     .content-responsive { padding: 14px !important; }
     .tab-bar-responsive { padding: 8px 14px !important; }
   }
+
+  /* ── Button loading state ─────────────────────────────── */
+  @keyframes btn-spin {
+    to { transform: rotate(360deg); }
+  }
+  .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.65s linear infinite;
+    vertical-align: -3px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+  button[data-loading="true"] {
+    opacity: 0.72;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* ── App boot skeleton ────────────────────────────────── */
+  .app-skeleton {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+  }
+  @keyframes skeleton-pulse {
+    0%,100% { opacity: 0.4; }
+    50%      { opacity: 0.9; }
+  }
+  .skeleton-bar {
+    height: 10px;
+    background: var(--border);
+    border-radius: 8px;
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
 </style>
 </head>
 <body class="font-sans min-h-screen antialiased overflow-x-hidden">
