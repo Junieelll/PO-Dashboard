@@ -21,6 +21,7 @@ const DEFAULT_COLUMNS = [
   { id: 'quantity',         label: 'Quantity',        type: 'number', width: 110, visible: true },
   { id: 'running_balance',  label: 'Running Balance', type: 'number', width: 150, visible: true },
   { id: 'invoice_no',       label: 'Invoice No.',     type: 'text',   width: 120, visible: true },
+  { id: 'remarks',          label: 'Remarks',         type: 'text',   width: 200, visible: true },
 ];
 
 // POST /auth/register

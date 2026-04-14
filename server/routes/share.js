@@ -117,7 +117,7 @@ router.get('/view/:token', async (req, res) => {
     if (link.po_list && Array.isArray(link.po_list)) {
       // Filtered by selected POs
       const { rows } = await db.query(
-        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no
+        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, remarks
          FROM po_entries WHERE sheet_id = $1 AND po_number = ANY($2::text[]) ORDER BY position ASC`,
         [sheetId, link.po_list]
       );
@@ -132,7 +132,7 @@ router.get('/view/:token', async (req, res) => {
     } else {
       // All POs
       const { rows } = await db.query(
-        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no
+        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, remarks
          FROM po_entries WHERE sheet_id = $1 ORDER BY position ASC`,
         [sheetId]
       );

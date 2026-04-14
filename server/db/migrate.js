@@ -44,6 +44,7 @@ async function migrate() {
         quantity        TEXT NOT NULL DEFAULT '',
         running_balance TEXT NOT NULL DEFAULT '',
         invoice_no      TEXT NOT NULL DEFAULT '',
+        remarks         TEXT NOT NULL DEFAULT '',
         created_at      TIMESTAMPTZ DEFAULT NOW()
       )
     `);

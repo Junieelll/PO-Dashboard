@@ -53,21 +53,22 @@ router.put('/:sheetId/rows', async (req, res) => {
 
     // 2. Save Entries
     if (cellData.length > 0) {
-      const cols = ['sheet_id', 'position', 'po_number', 'hauling_date', 'quantity', 'running_balance', 'invoice_no'];
+      const cols = ['sheet_id', 'position', 'po_number', 'hauling_date', 'quantity', 'running_balance', 'invoice_no', 'remarks'];
       const values = [];
       const params = [];
       let pi = 1;
 
       for (let i = 0; i < cellData.length; i++) {
         const r = cellData[i];
-        values.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
+        values.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
         params.push(
           sheetId, i,
           r.po_number       ?? '',
           r.hauling_date    ?? '',
           r.quantity        ?? '',
           r.running_balance ?? '',
-          r.invoice_no      ?? ''
+          r.invoice_no      ?? '',
+          r.remarks         ?? ''
         );
       }
 

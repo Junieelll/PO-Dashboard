@@ -93,7 +93,7 @@ router.get('/:id/full', async (req, res) => {
     if (!owned.length) return res.status(403).json({ error: 'Access denied' });
 
     const { rows: entries } = await db.query(
-      `SELECT po_number, hauling_date, quantity, running_balance, invoice_no
+      `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, remarks
        FROM po_entries WHERE sheet_id = $1 ORDER BY position ASC`,
       [sheetId]
     );

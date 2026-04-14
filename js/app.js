@@ -128,16 +128,6 @@ function renderAuth(isLogin = true) {
   const inputCls = 'w-full bg-surface-2 border-[1.5px] border-line rounded-xl py-[11px] px-3.5 text-txt text-[13px] font-normal outline-none transition-all duration-200 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-txt-3 placeholder:font-normal';
   app().innerHTML = `
   <div class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-    <!-- Decorative orbs -->
-    <div class="absolute top-[8%] left-[10%] w-80 h-80 bg-accent/15 rounded-full blur-[100px] anim-orbDrift pointer-events-none"></div>
-    <div class="absolute bottom-[12%] right-[8%] w-72 h-72 bg-teal/[0.12] rounded-full blur-[80px] anim-float1 pointer-events-none"></div>
-    <div class="absolute top-[45%] left-[55%] w-40 h-40 bg-accent-2/[0.12] rounded-full blur-[60px] anim-float2 pointer-events-none"></div>
-    <!-- Geometric shapes -->
-    <svg class="absolute top-[18%] right-[22%] w-4 h-4 text-accent/30 anim-float1" viewBox="0 0 16 16"><rect width="10" height="10" x="3" y="3" rx="2" fill="currentColor" transform="rotate(45 8 8)"/></svg>
-    <svg class="absolute bottom-[28%] left-[18%] w-3 h-3 text-teal/25 anim-float2" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg>
-    <svg class="absolute top-[35%] right-[32%] w-2.5 h-2.5 text-accent-2/20 anim-float1" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" fill="currentColor"/></svg>
-    <svg class="absolute bottom-[40%] right-[45%] w-5 h-5 text-accent/[0.12] anim-float2" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-
     <div class="bg-surface border border-line rounded-[28px] py-12 px-10 w-full max-w-[420px] shadow-lg anim-fadeUp relative z-10">
       
       <div class="flex flex-col items-center gap-2.5 mb-3">
@@ -275,14 +265,6 @@ function renderApp() {
   const isDark = !document.body.classList.contains('light');
   app().innerHTML = `
   <div class="flex flex-col min-h-screen anim-fadeIn relative">
-    <!-- Background decoration -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <div class="absolute -top-32 -right-32 w-[600px] h-[600px] bg-accent/[0.12] rounded-full blur-[120px] anim-orbDrift"></div>
-      <div class="absolute bottom-0 left-[15%] w-96 h-96 bg-teal/[0.1] rounded-full blur-[100px] anim-float2"></div>
-      <svg class="absolute top-[30%] right-[5%] w-3 h-3 text-accent/[0.15] anim-float1" viewBox="0 0 12 12"><rect width="8" height="8" x="2" y="2" rx="1.5" fill="currentColor" transform="rotate(45 6 6)"/></svg>
-      <svg class="absolute top-[70%] left-[8%] w-2.5 h-2.5 text-teal/[0.12] anim-float2" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>
-    </div>
-
     <header class="flex items-center justify-between px-7 h-[60px] bg-surface border-b border-line sticky top-0 z-[100] transition-colors duration-300 shadow-sm topbar-responsive relative">
       <div class="flex items-center text-accent gap-2.5 font-bold text-base tracking-tight [&_.ico]:w-[18px] [&_.ico]:h-[18px] [&_.ico]:text-accent">
         <span class="[&_.ico]:w-[18px] [&_.ico]:h-[18px] [&_.ico]:text-accent">${I.document}</span> Joanne's PO Tracker
@@ -614,6 +596,7 @@ function renderDashboard() {
             <th class="${thCls} !text-right">Quantity</th>
             <th class="${thCls} !text-right">Running Balance</th>
             <th class="${thCls}">Invoice No.</th>
+            <th class="${thCls}">Remarks</th>
             <th class="${thCls}"></th>
           </tr></thead>
           <tbody>
@@ -636,9 +619,10 @@ function renderDashboard() {
                 <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full tabular-nums text-right placeholder:text-txt-3" value="${numDisplay(e.quantity)}" data-ri="${e._idx}" data-col="quantity" placeholder="0" inputmode="decimal"/></div></td>
                 <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent"><span class="cell-readonly font-semibold text-[13px] ${balColor}" data-computed="balance" data-ri="${e._idx}">${isNaN(bal) ? '' : fmt(bal)}</span></div></td>
                 <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full placeholder:text-txt-3" value="${esc(e.invoice_no || '')}" data-ri="${e._idx}" data-col="invoice_no" placeholder="Invoice #"/></div></td>
+                <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle py-1.5"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><textarea class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full min-w-[180px] placeholder:text-txt-3 resize-y overflow-auto h-[34px] leading-tight" data-ri="${e._idx}" data-col="remarks" placeholder="Add remarks...">${esc(e.remarks || '')}</textarea></div></td>
                 <td class="w-11 text-center border-b border-line"><button class="row-del bg-transparent border-none text-txt-3 cursor-pointer p-[5px] rounded-lg transition-all duration-200 [&_.ico]:w-[15px] [&_.ico]:h-[15px] hover:text-danger hover:bg-danger/10" data-ri="${e._idx}" title="Delete">${I.trash}</button></td>
               </tr>`;
-            }).join('') : `<tr><td colspan="7" class="py-8 text-center text-txt-3 text-[13px] border-b border-line">No hauling entries yet. Click "Add hauling to this PO" below.</td></tr>`}
+            }).join('') : `<tr><td colspan="8" class="py-8 text-center text-txt-3 text-[13px] border-b border-line">No hauling entries yet. Click "Add hauling to this PO" below.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -919,10 +903,11 @@ function showAddHaulingModal(poNum) {
         <div class="c-cal" id="nh-dp-cal"></div>
       </div>
     </div>
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2 gap-3 mb-4">
       <div class="${TW.field}"><label class="${TW.label}">Quantity Hauled</label><input id="nh-qty" type="text" placeholder="0" inputmode="decimal" class="${TW.input}"/></div>
       <div class="${TW.field}"><label class="${TW.label}">Invoice No.</label><input id="nh-invoice" placeholder="e.g. 193" class="${TW.input}"/></div>
     </div>
+    <div class="${TW.field} mb-0"><label class="${TW.label}">Remarks</label><textarea id="nh-remarks" placeholder="Optional notes about this hauling..." class="${TW.input} min-h-[85px] resize-y py-2.5 leading-snug"></textarea></div>
     <div class="${TW.modalActions}">
       <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
       <button class="${TW.primaryBtn}" id="modal-save">Add Entry</button>
@@ -933,7 +918,9 @@ function showAddHaulingModal(poNum) {
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
   // Close calendar when clicking outside the datepicker
-  overlay.addEventListener('click', (e) => {
+  // We use mousedown because clicks within the calendar might trigger re-renders 
+  // (detaching the clicked element from the DOM), which would cause .closest() to fail on 'click'.
+  overlay.addEventListener('mousedown', (e) => {
     if (!e.target.closest('#nh-dp')) {
       document.getElementById('nh-dp')?.classList.remove('open');
     }
@@ -991,7 +978,8 @@ function showAddHaulingModal(poNum) {
       hauling_date: selDate,
       quantity: String(qty),
       running_balance: '',
-      invoice_no: overlay.querySelector('#nh-invoice').value.trim()
+      invoice_no: overlay.querySelector('#nh-invoice').value.trim(),
+      remarks: overlay.querySelector('#nh-remarks').value.trim()
     });
 
     recomputeAllBalances();
