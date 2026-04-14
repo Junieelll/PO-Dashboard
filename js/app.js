@@ -45,7 +45,7 @@ let columns    = [];
 let cellData   = [];
 let purchaseOrders = []; // New state row
 let thresholds = { '*': { danger: 0, warn: 1000 } };
-let emailCfg   = { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning' };
+let emailCfg   = { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning', recipients: [] };
 let alertLog   = [];
 let saveTimer  = null;
 let lastAlertKey = {}; // Tracker for previously triggered alerts per PO
@@ -242,7 +242,18 @@ async function loadSheet(id) {
   cellData   = d.cellData || [];
   purchaseOrders = d.purchaseOrders || [];
   thresholds = d.thresholds && Object.keys(d.thresholds).length ? d.thresholds : { '*': { danger: 0, warn: 1000 } };
-  emailCfg   = d.emailSettings || { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning' };
+  emailCfg   = d.emailSettings || { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning', recipients: [] };
+  // Migrate legacy string-only email config into recipients array
+  if (!emailCfg.recipients || !Array.isArray(emailCfg.recipients)) {
+    emailCfg.recipients = [];
+    if (emailCfg.to) {
+      emailCfg.to.split(',').map(e => e.trim()).filter(Boolean).forEach(e => {
+        emailCfg.recipients.push({ email: e, active: true });
+      });
+    }
+  }
+  // Always derive 'to' from active recipients
+  emailCfg.to = emailCfg.recipients.filter(r => r.active).map(r => r.email).join(', ');
   alertLog   = d.alertLog || [];
   activeSheet = id;
   lastAlertKey = {};
@@ -1102,7 +1113,10 @@ function checkAutoAlert() {
       lastAlertKey[a.po] = `${a.level}:${a.bv}`;
     });
 
-    if (newAlerts.length > 0 && emailCfg.to) {
+    // Derive active recipients for sending
+    const activeTo = (emailCfg.recipients || []).filter(r => r.active).map(r => r.email).join(', ');
+    emailCfg.to = activeTo;
+    if (newAlerts.length > 0 && activeTo) {
       await triggerEmail(newAlerts);
     }
   }, 2000);
@@ -1462,45 +1476,139 @@ function openThresholdModal(poNum = '*') {
 }
 
 function openEmailModal() {
+  // Work on a local copy of recipients so Cancel discards changes
+  let localRecipients = (emailCfg.recipients || []).map(r => ({ ...r }));
+
   const overlay = document.createElement('div');
   overlay.className = TW.overlay;
   overlay.innerHTML = `
-  <div class="${TW.modal}">
+  <div class="${TW.modal} !max-w-[520px]">
     <h2 class="${TW.modalH2}">${I.envelope} Email Settings</h2>
-    <p class="${TW.modalSub}">Configure alert email recipients</p>
-    <div class="${TW.field}"><label class="${TW.label}">Recipient Email(s)</label><input id="em-to" value="${esc(emailCfg.to)}" placeholder="team@example.com" class="${TW.input}"/></div>
+    <p class="${TW.modalSub}">Manage alert email recipients and settings</p>
+
+    <!-- Add Recipient -->
+    <div class="${TW.field}">
+      <label class="${TW.label}">Add Recipient</label>
+      <div class="flex gap-2">
+        <input id="em-add-input" type="email" placeholder="name@example.com" class="${TW.input} flex-1" />
+        <button class="${TW.ghostBtn} !min-w-0 !px-3.5" id="em-add-btn" title="Add">${I.plus}</button>
+      </div>
+    </div>
+
+    <!-- Recipient List -->
+    <div class="${TW.field}">
+      <label class="${TW.label}">Recipients</label>
+      <div id="em-list" class="max-h-[200px] overflow-y-auto bg-surface-2 border border-line rounded-xl"></div>
+    </div>
+
     <div class="${TW.field}"><label class="${TW.label}">Sender Name</label><input id="em-name" value="${esc(emailCfg.name)}" class="${TW.input}"/></div>
     <div class="${TW.field}"><label class="${TW.label}">Subject</label><input id="em-subj" value="${esc(emailCfg.subj)}" class="${TW.input}"/></div>
     <div class="${TW.modalActions}">
-      <button class="${TW.ghostBtn}" id="btn-test">Send Test</button>
+      <button class="${TW.ghostBtn}" id="btn-test" title="Tests current active email list">Send Test</button>
       <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
       <button class="${TW.primaryBtn}" id="modal-save">Save</button>
     </div>
   </div>`;
   document.body.appendChild(overlay);
+
+  // ── Render recipient list ─────────────────────────────
+  function renderRecipientList() {
+    const listEl = overlay.querySelector('#em-list');
+    if (!localRecipients.length) {
+      listEl.innerHTML = '<div class="text-center py-6 text-txt-3 text-[12px]">No recipients added yet</div>';
+      return;
+    }
+    listEl.innerHTML = localRecipients.map((r, i) => `
+      <div class="flex items-center gap-2.5 px-3 py-2.5 border-b border-line last:border-b-0 group transition-colors" data-ri="${i}">
+        <label class="relative inline-flex items-center cursor-pointer shrink-0" title="${r.active ? 'Active — will receive alerts' : 'Inactive — will NOT receive alerts'}">
+          <input type="checkbox" class="em-toggle sr-only peer" data-ri="${i}" ${r.active ? 'checked' : ''} />
+          <div class="w-9 h-5 bg-surface-3 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-line after:rounded-full after:h-4 after:w-4 after:transition-all after:duration-300 after:ease-in-out transition-colors duration-300 peer-checked:bg-ok"></div>
+        </label>
+        <input type="text" class="em-email-input bg-transparent border-none outline-none text-[13px] font-medium flex-1 min-w-0 transition-opacity duration-300 ${r.active ? 'text-txt opacity-100' : 'text-txt-3 opacity-40'}" value="${esc(r.email)}" data-ri="${i}" />
+        <button class="em-del shrink-0 bg-transparent border-none text-txt-3 cursor-pointer p-1 rounded-lg transition-all duration-300 hover:text-danger hover:bg-danger/10 [&_.ico]:w-[14px] [&_.ico]:h-[14px] ${r.active ? 'opacity-100' : 'opacity-40'}" data-ri="${i}" title="Remove">${I.trash}</button>
+      </div>
+    `).join('');
+
+    // Bind toggle switches
+    listEl.querySelectorAll('.em-toggle').forEach(cb => {
+      cb.onchange = () => {
+        const idx = Number(cb.dataset.ri);
+        localRecipients[idx].active = cb.checked;
+        renderRecipientList();
+      };
+    });
+
+    // Bind inline edit
+    listEl.querySelectorAll('.em-email-input').forEach(inp => {
+      inp.onblur = () => {
+        const idx = Number(inp.dataset.ri);
+        const val = inp.value.trim();
+        if (val) {
+          localRecipients[idx].email = val;
+        } else {
+          // If cleared, remove the entry
+          localRecipients.splice(idx, 1);
+          renderRecipientList();
+        }
+      };
+      inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
+    });
+
+    // Bind delete buttons
+    listEl.querySelectorAll('.em-del').forEach(btn => {
+      btn.onclick = () => {
+        localRecipients.splice(Number(btn.dataset.ri), 1);
+        renderRecipientList();
+      };
+    });
+  }
+  renderRecipientList();
+
+  // ── Add recipient ─────────────────────────────────────
+  const addInput = overlay.querySelector('#em-add-input');
+  const addRecipient = () => {
+    const email = addInput.value.trim();
+    if (!email) return toast('Enter an email address', 'warn');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Invalid email format', 'warn');
+    if (localRecipients.some(r => r.email.toLowerCase() === email.toLowerCase())) return toast('Email already in list', 'warn');
+    localRecipients.push({ email, active: true });
+    addInput.value = '';
+    renderRecipientList();
+    toast('Recipient added', 'ok');
+  };
+  overlay.querySelector('#em-add-btn').onclick = addRecipient;
+  addInput.addEventListener('keydown', e => { if (e.key === 'Enter') addRecipient(); });
+
+  // ── Close ─────────────────────────────────────────────
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  // ── Send Test (active emails only) ────────────────────
   overlay.querySelector('#btn-test').onclick = async () => {
     const testBtn = overlay.querySelector('#btn-test');
-    const to = overlay.querySelector('#em-to').value.trim();
-    if (!to) return toast('Enter an email first', 'warn');
+    const activeTo = localRecipients.filter(r => r.active).map(r => r.email).join(', ');
+    if (!activeTo) return toast('No active recipients to test', 'warn');
     const origHtml = setButtonLoading(testBtn, true);
     try {
-      await api.email.test(to);
-      toast(`Test sent to ${to}`, 'ok');
+      await api.email.test(activeTo);
+      toast(`Test sent to ${activeTo}`, 'ok');
     } catch (err) {
       toast(err.message, 'danger');
     } finally {
       setButtonLoading(testBtn, false, origHtml);
     }
   };
+
+  // ── Save ───────────────────────────────────────────────
   overlay.querySelector('#modal-save').onclick = async () => {
     const saveBtn = overlay.querySelector('#modal-save');
     const origHtml = setButtonLoading(saveBtn, true);
+    const activeTo = localRecipients.filter(r => r.active).map(r => r.email).join(', ');
     emailCfg = {
-      to:   overlay.querySelector('#em-to').value.trim(),
+      to: activeTo,
       name: overlay.querySelector('#em-name').value.trim() || 'PO Tracker System',
       subj: overlay.querySelector('#em-subj').value.trim() || '[ALERT] PO Balance Warning',
+      recipients: localRecipients,
     };
     try {
       if (activeSheet) await api.data.saveEmail(activeSheet, emailCfg);
