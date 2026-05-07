@@ -44,6 +44,7 @@ let activeSheet = null;
 let columns    = [];
 let cellData   = [];
 let purchaseOrders = []; // New state row
+let activeWasteTab = {}; // { poNum: waste_description } tracks active tab per PO card
 let thresholds = { '*': { danger: 0, warn: 1000 } };
 let emailCfg   = { to: '', name: 'PO Tracker System', subj: '[ALERT] PO Balance Warning', recipients: [] };
 let alertLog   = [];
@@ -249,12 +250,16 @@ async function loadSheet(id) {
   lastAlertKey = {};
   const currentAl = getAlertRows();
   currentAl.forEach(a => {
-    lastAlertKey[a.po] = `${a.level}:${a.bv}`;
+    const key = `${a.po}|||${a.wd || ''}`;
+    lastAlertKey[key] = `${a.level}:${a.bv}`;
   });
 }
 
-function getThreshold(po) {
-  return thresholds[po] || thresholds['*'] || { danger: 0, warn: 1000 };
+function getThreshold(po, wd = '') {
+  if (po === '*') return thresholds['*'] || { danger: 0, warn: 1000 };
+  const key = `${po}|||${wd}`;
+  const legacyKey = `${po}|||`;
+  return thresholds[key] || thresholds[legacyKey] || thresholds[po] || thresholds['*'] || { danger: 0, warn: 1000 };
 }
 
 // ══════════════════════════════════════════════════════════
@@ -442,21 +447,30 @@ function renderToolbar() {
 //  DASHBOARD — PO Card Layout
 // ══════════════════════════════════════════════════════════
 function groupByPO() {
-  const groups = {};
-  const order = [];
+  const groups = {};     // { poNum: { wasteDesc: [entries] } }
+  const order = [];      // unique PO numbers in order
+  const poIndex = {};    // { poNum: [purchaseOrder records] }
+
   purchaseOrders.forEach(po => {
-    groups[po.po_number] = [];
-    order.push(po.po_number);
+    if (!poIndex[po.po_number]) {
+      poIndex[po.po_number] = [];
+      order.push(po.po_number);
+    }
+    poIndex[po.po_number].push(po);
+    if (!groups[po.po_number]) groups[po.po_number] = {};
+    if (!groups[po.po_number][po.waste_description]) groups[po.po_number][po.waste_description] = [];
   });
+
   cellData.forEach((row, idx) => {
     const po = row.po_number || 'Unassigned';
-    if (!groups[po]) {
-      groups[po] = [];
-      if (!order.includes(po)) order.push(po);
-    }
-    groups[po].push({ ...row, _idx: idx });
+    const wd = row.waste_description || '';
+    if (!groups[po]) groups[po] = {};
+    if (!groups[po][wd]) groups[po][wd] = [];
+    if (!order.includes(po)) order.push(po);
+    groups[po][wd].push({ ...row, _idx: idx });
   });
-  return { groups, order };
+
+  return { groups, order, poIndex };
 }
 
 function renderDashboard() {
@@ -482,17 +496,19 @@ function renderDashboard() {
   let alertCount = 0;
 
   order.forEach(po => {
-    const entries = groups[po];
-    const poInfo = purchaseOrders.find(p => p.po_number === po);
-    const start = poInfo ? parseNum(poInfo.starting_qty) : 0;
-    const last = entries.length ? parseNum(entries[entries.length - 1]?.running_balance) || 0 : start;
-    globalHauled += (isNaN(start) ? 0 : start - last);
-    globalRemaining += last;
-    // Only count as alert if there are hauling entries AND balance is at/below warn threshold
-    if (entries.length > 0) {
-      const thr = getThreshold(po);
-      if (last <= thr.warn) alertCount++;
-    }
+    const wasteGroups = groups[po] || {};
+    Object.keys(wasteGroups).forEach(wd => {
+      const entries = wasteGroups[wd];
+      const poInfo = purchaseOrders.find(p => p.po_number === po && p.waste_description === wd);
+      const start = poInfo ? parseNum(poInfo.starting_qty) : 0;
+      const last = entries.length ? parseNum(entries[entries.length - 1]?.running_balance) || 0 : start;
+      globalHauled += (isNaN(start) ? 0 : start - last);
+      globalRemaining += last;
+      if (entries.length > 0) {
+        const thr = getThreshold(po, wd);
+        if (last <= thr.warn) alertCount++;
+      }
+    });
   });
 
   const heroHtml = `
@@ -521,117 +537,12 @@ function renderDashboard() {
   order.forEach(poNum => {
     if (searchQuery && !poNum.toLowerCase().includes(searchQuery)) return;
     visibleCount++;
-    const entries = groups[poNum];
-    const poInfo = purchaseOrders.find(p => p.po_number === poNum);
-    const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
-    const lastEntry = entries[entries.length - 1];
-    const lastBal = entries.length ? parseNum(lastEntry?.running_balance) : startQty;
-    const totalUsed = isNaN(startQty) ? 0 : startQty - lastBal;
-    const pct = startQty > 0 ? Math.min(100, Math.round((totalUsed / startQty) * 100)) : 0;
-
-    const thr = getThreshold(poNum);
-    let alertStatus = 'ok';
-    // Only show alert status if the PO actually has hauling entries
-    if (entries.length > 0) {
-      if (lastBal <= thr.danger) alertStatus = 'danger';
-      else if (lastBal <= thr.warn) alertStatus = 'warn';
-    }
-
-    // Progress bar color is always success-green (hauling is positive progress)
-    const progressColorStatus = 'ok';
-
-    const statusBadge = {
-      danger: `<span class="inline-flex items-center px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-danger/10 text-danger anim-pulse-danger border border-danger/20 ml-3">CRITICAL</span>`,
-      warn: `<span class="inline-flex items-center px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-warn/10 text-warn border border-warn/20 ml-3">WARNING</span>`,
-      ok: ''
-    }[alertStatus];
-
-    const statColor = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[alertStatus];
-    const thCls = 'py-3 px-4 text-[10px] font-semibold text-txt-3 uppercase tracking-[0.6px] text-left border-b border-line bg-transparent whitespace-nowrap';
-
-    html += `
-    <div class="po-card bg-surface rounded-[28px] overflow-hidden anim-fadeUp transition-all duration-300 shadow-sm hover:border-line-lit hover:shadow-md" data-po="${esc(poNum)}">
-      <div class="flex items-center justify-between py-6 px-7 flex-wrap gap-4 bg-surface border-b border-line">
-        <div class="flex flex-col gap-1.5">
-          <div class="text-lg font-bold tracking-tight text-txt flex items-center group">
-            <span class="text-[11px] text-white font-bold mr-3 bg-[#ff6b81] px-2.5 py-1 rounded-full uppercase tracking-wide">P.O. NUMBER</span>
-            ${esc(poNum)}
-            ${statusBadge}
-          </div>
-          ${poInfo && poInfo.waste_description ? `<div class="text-[11px] font-medium text-txt-2 tracking-wide uppercase mt-0.5">${esc(poInfo.waste_description)}</div>` : ''}
-          <div class="text-xs text-txt-3 font-medium flex items-center gap-4 mt-1">
-            <span class="flex items-center gap-1.5">${I.document} ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}</span>
-            <button class="po-thr-btn bg-transparent border-none text-rose-400 hover:text-rose-500 cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}">${I.cog} Set Threshold</button>
-            <button class="po-edit-btn bg-transparent border-none text-txt-3 hover:text-accent cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}">${I.pencil} Edit Details</button>
-          </div>
-        </div>
-        <div class="flex gap-9 items-center">
-          <div class="flex flex-col gap-[3px] text-right">
-            <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Starting Qty</span>
-            <span class="po-stat-value text-[22px] font-bold tabular-nums tracking-tight">${isNaN(startQty) ? '--' : fmt(startQty)}</span>
-          </div>
-          <div class="flex flex-col gap-[3px] text-right">
-            <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Remaining</span>
-            <span class="po-stat-value text-[22px] font-bold tabular-nums tracking-tight ${statColor}">${fmt(lastBal)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div id="manage-${esc(poNum)}" class="hidden bg-surface-2 border-b border-line px-7 py-5 anim-fadeDown"></div>
-      <div class="flex items-center gap-3.5 py-3.5 px-7 bg-surface-2">
-        <div class="flex-1 h-[7px] bg-surface-3 rounded-lg overflow-hidden"><div class="progress-${progressColorStatus} h-full rounded-lg transition-all duration-700" style="width:${pct}%"></div></div>
-        <span class="text-[11px] font-semibold text-txt-3 whitespace-nowrap min-w-[64px] text-right">${pct}% hauled</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="po-table w-full border-collapse tabular-nums m-0">
-          <thead><tr>
-            <th class="${thCls} w-10 px-2 text-center">
-              <label class="relative flex items-center justify-center shrink-0 cursor-pointer group mx-auto w-max">
-                <input type="checkbox" data-master-po="${esc(poNum)}" onchange="window._checkMasterPO(this, '${esc(poNum)}')" class="cb-master peer appearance-none w-[16px] h-[16px] border-[1.5px] border-line rounded bg-surface checked:bg-accent checked:border-accent transition-all cursor-pointer group-hover:border-accent/[0.5]"/>
-                <svg class="absolute inset-0 w-full h-full text-white pointer-events-none opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all p-[2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </label>
-            </th>
-            <th class="${thCls} text-center w-11 min-w-[44px]">#</th>
-            <th class="${thCls}">Hauling Date</th>
-            <th class="${thCls} !text-right">Quantity</th>
-            <th class="${thCls} !text-right">Running Balance</th>
-            <th class="${thCls}">Invoice No.</th>
-            <th class="${thCls}">Remarks</th>
-            <th class="${thCls}"></th>
-          </tr></thead>
-          <tbody>
-            ${entries.length > 0 ? entries.map((e, ei) => {
-              const bal = parseNum(e.running_balance);
-              let rowCls = '';
-              const thr = getThreshold(poNum);
-              if (!isNaN(bal) && bal <= thr.danger) rowCls = 'row-danger';
-              else if (!isNaN(bal) && bal <= thr.warn) rowCls = 'row-warn';
-              const balColor = rowCls ? (rowCls === 'row-danger' ? 'text-danger' : 'text-warn') : (bal > 0 ? 'text-ok' : '');
-              return `<tr class="${rowCls} transition-colors duration-200 hover:bg-surface-2" data-ri="${e._idx}">
-                <td class="w-10 px-2 border-b border-line align-middle text-center">
-                  <label class="relative flex items-center justify-center shrink-0 cursor-pointer group mx-auto w-max">
-                    <input type="checkbox" data-ri="${e._idx}" data-po="${esc(poNum)}" class="cb-row peer appearance-none w-[16px] h-[16px] border-[1.5px] border-line rounded bg-surface checked:bg-accent checked:border-accent transition-all cursor-pointer group-hover:border-accent/[0.5]" onchange="window._checkRow(this)"/>
-                    <svg class="absolute inset-0 w-full h-full text-white pointer-events-none opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all p-[2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  </label>
-                </td>
-                <td class="text-txt-3 text-[11px] font-medium text-center w-11 min-w-[44px] border-b border-line">${ei + 1}</td>
-                <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><span class="date-cell cursor-pointer text-[13px] text-txt font-normal py-0.5 px-1 rounded-md transition-colors duration-150 whitespace-nowrap hover:bg-accent/[0.06] hover:text-accent-2" data-ri="${e._idx}" tabindex="0">${formatDateDisplay(e.hauling_date) || '<span class="text-txt-3">Pick date</span>'}</span></div></td>
-                <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full tabular-nums text-right placeholder:text-txt-3" value="${numDisplay(e.quantity)}" data-ri="${e._idx}" data-col="quantity" placeholder="0" inputmode="decimal"/></div></td>
-                <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent"><span class="cell-readonly font-semibold text-[13px] ${balColor}" data-computed="balance" data-ri="${e._idx}">${isNaN(bal) ? '' : fmt(bal)}</span></div></td>
-                <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full placeholder:text-txt-3" value="${esc(e.invoice_no || '')}" data-ri="${e._idx}" data-col="invoice_no" placeholder="Invoice #"/></div></td>
-                <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle py-1.5"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><textarea class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full min-w-[180px] placeholder:text-txt-3 resize-y overflow-auto h-[34px] leading-tight" data-ri="${e._idx}" data-col="remarks" placeholder="Add remarks...">${esc(e.remarks || '')}</textarea></div></td>
-                <td class="w-11 text-center border-b border-line"><button class="row-del bg-transparent border-none text-txt-3 cursor-pointer p-[5px] rounded-lg transition-all duration-200 [&_.ico]:w-[15px] [&_.ico]:h-[15px] hover:text-danger hover:bg-danger/10" data-ri="${e._idx}" title="Delete">${I.trash}</button></td>
-              </tr>`;
-            }).join('') : `<tr><td colspan="8" class="py-8 text-center text-txt-3 text-[13px] border-b border-line">No hauling entries yet. Click "Add hauling to this PO" below.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-      <div class="py-3.5 px-7 flex justify-start">
-        <button class="po-add-entry inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]" data-po="${esc(poNum)}">${I.plus} Add hauling to this PO</button>
-      </div>
+    html += `<div class="po-card bg-surface rounded-[28px] overflow-hidden anim-fadeUp transition-all duration-300 shadow-sm hover:border-line-lit hover:shadow-md" data-po="${esc(poNum)}">
+      ${buildPOCardHtml(poNum, groups)}
     </div>`;
   });
   html += '</div>';
+
 
   if (searchQuery && visibleCount === 0) {
     html = heroHtml + `
@@ -643,21 +554,246 @@ function renderDashboard() {
 
   section.innerHTML = html;
 
-  // Bind events
-  $$('.cell-input').forEach(inp => {
-    inp.addEventListener('change', onCellChange);
-    inp.addEventListener('blur', onCellBlur);
+  // Initial binding and tab pill alignment
+  $$('.po-card').forEach(card => {
+    bindPOCardEvents(card);
+    updateTabPill(card);
   });
-  $$('.row-del').forEach(btn => { btn.onclick = () => deleteRow(Number(btn.dataset.ri)); });
-  $$('.po-add-entry').forEach(btn => { btn.onclick = () => addHaulingToPO(btn.dataset.po); });
-  $$('.po-thr-btn').forEach(btn => { btn.onclick = () => openThresholdModal(btn.dataset.po); });
-  $$('.po-edit-btn').forEach(btn => { btn.onclick = () => openPODrawer(btn.dataset.po); });
-
-  // Bind date cells to shared datepicker
-  initTableDatepickers();
 
   // Ensure FAB resets on render
   if (window.updateFAB) window.updateFAB();
+}
+
+/**
+ * Builds the HTML content for a single PO Card.
+ */
+function buildPOCardHtml(poNum, groups) {
+  const wasteGroups = groups[poNum] || {};
+  const wasteDescs = Object.keys(wasteGroups);
+  
+  if (!activeWasteTab[poNum] || !wasteDescs.includes(activeWasteTab[poNum])) {
+    activeWasteTab[poNum] = wasteDescs[0] || '';
+  }
+  
+  const activeWD = activeWasteTab[poNum];
+  const entries = wasteGroups[activeWD] || [];
+  const poInfo = purchaseOrders.find(p => p.po_number === poNum && p.waste_description === activeWD);
+  const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
+  const lastEntry = entries[entries.length - 1];
+  const lastBal = entries.length ? parseNum(lastEntry?.running_balance) : startQty;
+  const totalUsed = isNaN(startQty) ? 0 : startQty - lastBal;
+  const pct = startQty > 0 ? Math.min(100, Math.round((totalUsed / startQty) * 100)) : 0;
+
+  const thr = getThreshold(poNum, activeWD);
+  let alertStatus = 'ok';
+  if (entries.length > 0) {
+    if (lastBal <= thr.danger) alertStatus = 'danger';
+    else if (lastBal <= thr.warn) alertStatus = 'warn';
+  }
+
+  const statusBadge = {
+    danger: `<span class="inline-flex items-center px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-danger/10 text-danger anim-pulse-danger border border-danger/20 ml-3">CRITICAL</span>`,
+    warn: `<span class="inline-flex items-center px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-warn/10 text-warn border border-warn/20 ml-3">WARNING</span>`,
+    ok: ''
+  }[alertStatus];
+  
+  const statColor = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[alertStatus];
+  const thCls = 'py-3 px-4 text-[10px] font-semibold text-txt-3 uppercase tracking-[0.6px] text-left border-b border-line bg-transparent whitespace-nowrap';
+
+  const tabsHtml = wasteDescs.length > 0 ? `
+    <div class="px-7 py-3 bg-surface border-b border-line overflow-x-auto">
+      <div class="flex items-center gap-3">
+        <div class="tabs-container">
+          <div class="tab-pill"></div>
+          ${wasteDescs.map(wd => {
+            const pi = purchaseOrders.find(p => p.po_number === poNum && p.waste_description === wd);
+            const label = (pi?.tab_name || wd || 'Default').trim() || 'Default';
+            const isActive = wd === activeWD;
+            return `<button class="po-waste-tab ${isActive ? 'active' : ''}" data-po="${esc(poNum)}" data-wd="${esc(wd)}">${esc(label)}</button>`;
+          }).join('')}
+        </div>
+        <button class="po-add-waste w-[32px] h-[32px] flex items-center justify-center bg-surface-2 border-[1.5px] border-dashed border-line rounded-[10px] text-txt-3 cursor-pointer text-sm transition-all duration-200 hover:border-accent hover:text-accent hover:bg-accent/[0.06] shrink-0" data-po="${esc(poNum)}" title="Add waste category">${I.plus}</button>
+      </div>
+    </div>
+  ` : '';
+
+  return `
+    <div class="flex items-center justify-between py-6 px-7 flex-wrap gap-4 bg-surface border-b border-line">
+      <div class="flex flex-col gap-1.5">
+        <div class="text-lg font-bold tracking-tight text-txt flex items-center group">
+          <span class="text-[11px] text-white font-bold mr-3 bg-[#ff6b81] px-2.5 py-1 rounded-full uppercase tracking-wide">P.O. NUMBER</span>
+          ${esc(poNum)}
+          ${statusBadge}
+        </div>
+        <div class="text-xs text-txt-3 font-medium flex items-center gap-4 mt-1">
+          <span class="flex items-center gap-1.5">${I.document} ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}</span>
+          <button class="po-thr-btn bg-transparent border-none text-rose-400 hover:text-rose-500 cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.cog} Set Threshold</button>
+          <button class="po-edit-btn bg-transparent border-none text-txt-3 hover:text-accent cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.pencil} Edit PO</button>
+        </div>
+      </div>
+      <div class="flex gap-9 items-center">
+        <div class="flex flex-col gap-[3px] text-right">
+          <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Starting Qty</span>
+          <span class="po-stat-value po-stat-start text-[22px] font-bold tabular-nums tracking-tight transition-all duration-500" data-val="${startQty}">${isNaN(startQty) ? '--' : fmt(startQty)}</span>
+        </div>
+        <div class="flex flex-col gap-[3px] text-right">
+          <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Remaining</span>
+          <span class="po-stat-value po-stat-rem text-[22px] font-bold tabular-nums tracking-tight transition-all duration-500 ${statColor}" data-val="${lastBal}">${fmt(lastBal)}</span>
+        </div>
+      </div>
+    </div>
+    ${tabsHtml}
+    <div class="flex items-center gap-3.5 py-3.5 px-7 bg-surface-2">
+      <div class="flex-1 h-[7px] bg-surface-3 rounded-lg overflow-hidden"><div class="progress-${alertStatus} h-full rounded-lg transition-all duration-700" style="width:${pct}%"></div></div>
+      <span class="text-[11px] font-semibold text-txt-3 whitespace-nowrap min-w-[64px] text-right">${pct}% hauled</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="po-table w-full border-collapse tabular-nums m-0">
+        <thead><tr>
+          <th class="${thCls} w-10 px-2 text-center">
+            <label class="relative flex items-center justify-center shrink-0 cursor-pointer group mx-auto w-max">
+              <input type="checkbox" data-master-po="${esc(poNum)}" onchange="window._checkMasterPO(this, '${esc(poNum)}')" class="cb-master peer appearance-none w-[16px] h-[16px] border-[1.5px] border-line rounded bg-surface checked:bg-accent checked:border-accent transition-all cursor-pointer group-hover:border-accent/[0.5]"/>
+              <svg class="absolute inset-0 w-full h-full text-white pointer-events-none opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all p-[2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </label>
+          </th>
+          <th class="${thCls} text-center w-11 min-w-[44px]">#</th>
+          <th class="${thCls}">Hauling Date</th>
+          <th class="${thCls} !text-right">Quantity</th>
+          <th class="${thCls} !text-right">Running Balance</th>
+          <th class="${thCls}">Invoice No.</th>
+          <th class="${thCls}">Remarks</th>
+          <th class="${thCls}"></th>
+        </tr></thead>
+        <tbody>
+          ${entries.length > 0 ? entries.map((e, ei) => {
+            const bal = parseNum(e.running_balance);
+            let rowCls = '';
+            const thr2 = getThreshold(poNum, activeWD);
+            if (!isNaN(bal) && bal <= thr2.danger) rowCls = 'row-danger';
+            else if (!isNaN(bal) && bal <= thr2.warn) rowCls = 'row-warn';
+            const balColor = rowCls ? (rowCls === 'row-danger' ? 'text-danger' : 'text-warn') : (bal > 0 ? 'text-ok' : '');
+            return `<tr class="${rowCls} transition-colors duration-200 hover:bg-surface-2" data-ri="${e._idx}">
+              <td class="w-10 px-2 border-b border-line align-middle text-center">
+                <label class="relative flex items-center justify-center shrink-0 cursor-pointer group mx-auto w-max">
+                  <input type="checkbox" data-ri="${e._idx}" data-po="${esc(poNum)}" class="cb-row peer appearance-none w-[16px] h-[16px] border-[1.5px] border-line rounded bg-surface checked:bg-accent checked:border-accent transition-all cursor-pointer group-hover:border-accent/[0.5]" onchange="window._checkRow(this)"/>
+                  <svg class="absolute inset-0 w-full h-full text-white pointer-events-none opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all p-[2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </label>
+              </td>
+              <td class="text-txt-3 text-[11px] font-medium text-center w-11 min-w-[44px] border-b border-line">${ei + 1}</td>
+              <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><span class="date-cell cursor-pointer text-[13px] text-txt font-normal py-0.5 px-1 rounded-md transition-colors duration-150 whitespace-nowrap hover:bg-accent/[0.06] hover:text-accent-2" data-ri="${e._idx}" tabindex="0">${formatDateDisplay(e.hauling_date) || '<span class="text-txt-3">Pick date</span>'}</span></div></td>
+              <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full tabular-nums text-right placeholder:text-txt-3" value="${numDisplay(e.quantity)}" data-ri="${e._idx}" data-col="quantity" placeholder="0" inputmode="decimal"/></div></td>
+              <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent"><span class="cell-readonly font-semibold text-[13px] ${balColor}" data-computed="balance" data-ri="${e._idx}">${isNaN(bal) ? '' : fmt(bal)}</span></div></td>
+              <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full placeholder:text-txt-3" value="${esc(e.invoice_no || '')}" data-ri="${e._idx}" data-col="invoice_no" placeholder="Invoice #"/></div></td>
+              <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle py-1.5"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><textarea class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full min-w-[180px] placeholder:text-txt-3 resize-y overflow-auto h-[34px] leading-tight" data-ri="${e._idx}" data-col="remarks" placeholder="Add remarks...">${esc(e.remarks || '')}</textarea></div></td>
+              <td class="w-11 text-center border-b border-line"><button class="row-del bg-transparent border-none text-txt-3 cursor-pointer p-[5px] rounded-lg transition-all duration-200 [&_.ico]:w-[15px] [&_.ico]:h-[15px] hover:text-danger hover:bg-danger/10" data-ri="${e._idx}" title="Delete">${I.trash}</button></td>
+            </tr>`;
+          }).join('') : `<tr><td colspan="8" class="py-8 text-center text-txt-3 text-[13px] border-b border-line">No hauling entries yet. Click "Add hauling" below.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <div class="py-3.5 px-7 flex justify-start">
+      <button class="po-add-entry inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.plus} Add hauling</button>
+    </div>`;
+}
+
+/**
+ * Binds event listeners for a specific PO Card element.
+ */
+function bindPOCardEvents(cardEl) {
+  const poNum = cardEl.dataset.po;
+  
+  cardEl.querySelectorAll('.cell-input').forEach(inp => {
+    inp.addEventListener('change', onCellChange);
+    inp.addEventListener('blur', onCellBlur);
+  });
+  
+  cardEl.querySelectorAll('.row-del').forEach(btn => { 
+    btn.onclick = () => deleteRow(Number(btn.dataset.ri)); 
+  });
+  
+  cardEl.querySelectorAll('.po-add-entry').forEach(btn => { 
+    btn.onclick = () => addHaulingToPO(btn.dataset.po, btn.dataset.wd); 
+  });
+  
+  cardEl.querySelectorAll('.po-waste-tab').forEach(btn => {
+    btn.onclick = () => {
+      const wd = btn.dataset.wd;
+      if (activeWasteTab[poNum] === wd) return;
+
+      const oldStart = parseNum(cardEl.querySelector('.po-stat-start')?.dataset.val) || 0;
+      const oldRem = parseNum(cardEl.querySelector('.po-stat-rem')?.dataset.val) || 0;
+      
+      activeWasteTab[poNum] = wd;
+      const groups = groupByPO().groups;
+      cardEl.innerHTML = buildPOCardHtml(poNum, groups);
+      
+      const newStart = parseNum(cardEl.querySelector('.po-stat-start')?.dataset.val) || 0;
+      const newRem = parseNum(cardEl.querySelector('.po-stat-rem')?.dataset.val) || 0;
+
+      animateValue(cardEl.querySelector('.po-stat-start'), oldStart, newStart, 600);
+      animateValue(cardEl.querySelector('.po-stat-rem'), oldRem, newRem, 600);
+
+      // Re-bind events for the fresh content
+      bindPOCardEvents(cardEl);
+      updateTabPill(cardEl);
+    };
+    btn.ondblclick = () => renameWasteTab(btn.dataset.po, btn.dataset.wd);
+  });
+  
+  cardEl.querySelectorAll('.po-add-waste').forEach(btn => { 
+    btn.onclick = () => showAddWasteModal(btn.dataset.po); 
+  });
+  
+  cardEl.querySelectorAll('.po-thr-btn').forEach(btn => { 
+    btn.onclick = () => openThresholdModal(btn.dataset.po, btn.dataset.wd); 
+  });
+  
+  cardEl.querySelectorAll('.po-edit-btn').forEach(btn => { 
+    btn.onclick = () => openPODrawer(btn.dataset.po); 
+  });
+
+  // Re-init datepickers for the new rows
+  initTableDatepickers(cardEl);
+}
+
+/**
+ * Positions the animated background 'pill' for the active tab.
+ */
+function updateTabPill(cardEl) {
+  const activeTab = cardEl.querySelector('.po-waste-tab.active');
+  const pill = cardEl.querySelector('.tab-pill');
+  if (activeTab && pill) {
+    pill.style.width = `${activeTab.offsetWidth}px`;
+    pill.style.left = `${activeTab.offsetLeft}px`;
+  }
+}
+
+/**
+ * Smoothly animates a numeric value inside an element.
+ */
+function animateValue(el, start, end, duration) {
+  if (!el || isNaN(start) || isNaN(end)) {
+    if (el) el.textContent = isNaN(end) ? '--' : fmt(end);
+    return;
+  }
+  if (start === end) return;
+  
+  el.textContent = fmt(start); // Set start value immediately
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+    const current = start + eased * (end - start);
+    el.textContent = fmt(current);
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    } else {
+      el.textContent = fmt(end);
+      el.dataset.val = end;
+    }
+  };
+  window.requestAnimationFrame(step);
 }
 
 // ── Batch Delete Logic ──────────────────────────────────
@@ -718,8 +854,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function initTableDatepickers() {
-  $$('.date-cell').forEach(el => {
+function initTableDatepickers(container = document) {
+  const cells = container === document ? $$('.date-cell') : container.querySelectorAll('.date-cell');
+  cells.forEach(el => {
     el.onclick = (e) => {
       e.stopPropagation();
       openSharedDatepicker(el, Number(el.dataset.ri));
@@ -763,7 +900,8 @@ function updateComputedCells() {
     const ri = Number(el.dataset.ri);
     const bal = parseNum(cellData[ri]?.running_balance);
     const po = cellData[ri]?.po_number || '*';
-    const thr = getThreshold(po);
+    const wd = cellData[ri]?.waste_description || '';
+    const thr = getThreshold(po, wd);
     el.textContent = isNaN(bal) ? '' : fmt(bal);
     el.className = 'cell-readonly font-semibold text-[13px]';
     if (!isNaN(bal)) {
@@ -787,13 +925,14 @@ function updateCardHeaders() {
   const { groups, order } = groupByPO();
   document.querySelectorAll('.po-card').forEach(card => {
     const po = card.dataset.po;
-    const entries = groups[po];
-    const poInfo = purchaseOrders.find(p => p.po_number === po);
+    const activeWD = activeWasteTab[po] || Object.keys(groups[po] || {})[0] || '';
+    const entries = (groups[po] && groups[po][activeWD]) || [];
+    const poInfo = purchaseOrders.find(p => p.po_number === po && p.waste_description === activeWD);
     const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
     const lastBal = entries.length ? parseNum(entries[entries.length - 1]?.running_balance) : startQty;
     const totalUsed = isNaN(startQty) ? 0 : startQty - lastBal;
     const pct = startQty > 0 ? Math.min(100, Math.round((totalUsed / startQty) * 100)) : 0;
-    const thr = getThreshold(po);
+    const thr = getThreshold(po, activeWD);
     let status = 'ok';
     if (entries && entries.length > 0) {
       if (lastBal <= thr.danger) status = 'danger';
@@ -815,21 +954,24 @@ function updateCardHeaders() {
 function recomputeAllBalances() {
   const poMap = {};
   purchaseOrders.forEach(po => {
-    poMap[po.po_number] = parseNum(po.starting_qty) || 0;
+    const key = po.po_number + '|||' + (po.waste_description || '');
+    poMap[key] = parseNum(po.starting_qty) || 0;
   });
 
   const seen = {};
   cellData.forEach((row) => {
     const po = row.po_number || 'Unassigned';
+    const wd = row.waste_description || '';
+    const key = po + '|||' + wd;
     const qty = parseNum(row.quantity) || 0;
-    const startBal = poMap[po] || 0;
+    const startBal = poMap[key] || 0;
     
-    if (!seen[po]) {
-      seen[po] = { runningTotal: qty };
+    if (!seen[key]) {
+      seen[key] = { runningTotal: qty };
       row.running_balance = String(startBal - qty);
     } else {
-      seen[po].runningTotal += qty;
-      row.running_balance = String(startBal - seen[po].runningTotal);
+      seen[key].runningTotal += qty;
+      row.running_balance = String(startBal - seen[key].runningTotal);
     }
   });
 }
@@ -840,8 +982,8 @@ function addPO() {
   showAddPOModal();
 }
 
-function addHaulingToPO(poNum) {
-  showAddHaulingModal(poNum);
+function addHaulingToPO(poNum, wasteDesc) {
+  showAddHaulingModal(poNum, wasteDesc || activeWasteTab[poNum] || '');
 }
 
 function showAddPOModal() {
@@ -850,10 +992,11 @@ function showAddPOModal() {
   overlay.innerHTML = `
   <div class="${TW.modal}">
     <h2 class="${TW.modalH2}">${I.plus} New Purchase Order</h2>
-    <p class="${TW.modalSub}">Create a new PO with its starting quantity</p>
-    <div class="${TW.field}"><label class="${TW.label}">P.O. No.</label><input id="npo-po" placeholder="e.g. 21208720" class="${TW.input}"/></div>
-    <div class="${TW.field}"><label class="${TW.label}">Starting PO Quantity</label><input id="npo-qty" type="text" placeholder="e.g. 200,000" inputmode="decimal" class="${TW.input}"/></div>
-    <div class="${TW.field}"><label class="${TW.label}">Waste Description (Optional)</label><input id="npo-desc" placeholder="e.g. Mixed Waste" class="${TW.input}"/></div>
+    <p class="${TW.modalSub}">Create a new PO with its first waste category</p>
+    <div class="${TW.field}"><label class="${TW.label}">P.O. Number</label><input id="npo-po" placeholder="e.g. 21208720" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Waste Description</label><input id="npo-desc" placeholder="e.g. Mixed Waste" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Starting Quantity</label><input id="npo-qty" type="text" placeholder="e.g. 200,000" inputmode="decimal" class="${TW.input}"/></div>
+    <div id="npo-existing-msg"></div>
     <div class="${TW.modalActions}">
       <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
       <button class="${TW.primaryBtn}" id="modal-save">Create PO</button>
@@ -862,23 +1005,38 @@ function showAddPOModal() {
   document.body.appendChild(overlay);
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') overlay.querySelector('#modal-save').click(); });
 
   const poInp = overlay.querySelector('#npo-po');
   const qtyInp = overlay.querySelector('#npo-qty');
+  const descInp = overlay.querySelector('#npo-desc');
+  const msgEl = overlay.querySelector('#npo-existing-msg');
   qtyInp.addEventListener('input', window._fmtCommaInput);
+
+  poInp.addEventListener('input', () => {
+    const po = poInp.value.trim();
+    const existing = purchaseOrders.filter(p => p.po_number === po);
+    if (existing.length > 0) {
+      const names = existing.map(p => p.waste_description || 'Default').join(', ');
+      msgEl.innerHTML = `<div class="bg-accent/[0.08] border border-accent/[0.18] text-accent-2 rounded-xl py-2.5 px-3.5 text-[12px] mb-4">
+        Heads up! <strong>PO #${po}</strong> is already tracking <strong>${names}</strong>. 
+        Continuing will add this new waste category to the same PO number.
+      </div>`;
+    } else { msgEl.innerHTML = ''; }
+  });
 
   overlay.querySelector('#modal-save').onclick = () => {
     const po = poInp.value.trim();
     const qty = parseNum(qtyInp.value) || 0;
-    const desc = overlay.querySelector('#npo-desc').value.trim();
+    const desc = descInp.value.trim();
     if (!po) return toast('PO Number required', 'warn');
+    if (!desc) return toast('Waste Description required', 'warn');
     if (qty <= 0) return toast('Starting quantity must be > 0', 'warn');
-
-    if (purchaseOrders.some(p => p.po_number === po)) {
-      return toast('PO already exists', 'warn');
+    if (purchaseOrders.some(p => p.po_number === po && p.waste_description === desc)) {
+      return toast('This PO + waste description already exists', 'warn');
     }
-
-    purchaseOrders.push({ po_number: po, starting_qty: String(qty), waste_description: desc });
+    purchaseOrders.push({ po_number: po, starting_qty: String(qty), waste_description: desc, tab_name: '' });
+    activeWasteTab[po] = desc;
     overlay.remove();
     renderDashboard();
     scheduleSave();
@@ -887,7 +1045,7 @@ function showAddPOModal() {
   setTimeout(() => poInp.focus(), 100);
 }
 
-function showAddHaulingModal(poNum) {
+function showAddHaulingModal(poNum, wasteDesc) {
   const overlay = document.createElement('div');
   overlay.className = TW.overlay;
   overlay.innerHTML = `
@@ -916,6 +1074,7 @@ function showAddHaulingModal(poNum) {
   document.body.appendChild(overlay);
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') overlay.querySelector('#modal-save').click(); });
 
   // Close calendar when clicking outside the datepicker
   // We use mousedown because clicks within the calendar might trigger re-renders 
@@ -975,6 +1134,7 @@ function showAddHaulingModal(poNum) {
 
     cellData.push({
       po_number: poNum,
+      waste_description: wasteDesc || '',
       hauling_date: selDate,
       quantity: String(qty),
       running_balance: '',
@@ -1005,16 +1165,69 @@ function deleteRow(ri) {
   });
 }
 
+function showAddWasteModal(poNum) {
+  const overlay = document.createElement('div');
+  overlay.className = TW.overlay;
+  overlay.innerHTML = `
+  <div class="${TW.modal}">
+    <h2 class="${TW.modalH2}">${I.plus} Add Waste Category</h2>
+    <p class="${TW.modalSub}">Add a new waste category to PO <strong>${esc(poNum)}</strong></p>
+    <div class="${TW.field}"><label class="${TW.label}">Waste Description</label><input id="aw-desc" placeholder="e.g. Chemical Waste" class="${TW.input}"/></div>
+    <div class="${TW.field}"><label class="${TW.label}">Starting Quantity</label><input id="aw-qty" type="text" placeholder="e.g. 50,000" inputmode="decimal" class="${TW.input}"/></div>
+    <div class="${TW.modalActions}">
+      <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
+      <button class="${TW.primaryBtn}" id="modal-save">Add Category</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') overlay.querySelector('#modal-save').click(); });
+  const qInp = overlay.querySelector('#aw-qty');
+  qInp.addEventListener('input', window._fmtCommaInput);
+
+  overlay.querySelector('#modal-save').onclick = () => {
+    const desc = overlay.querySelector('#aw-desc').value.trim();
+    const qty = parseNum(qInp.value) || 0;
+    if (!desc) return toast('Waste Description required', 'warn');
+    if (qty <= 0) return toast('Starting quantity must be > 0', 'warn');
+    if (purchaseOrders.some(p => p.po_number === poNum && p.waste_description === desc)) {
+      return toast('This waste description already exists for this PO', 'warn');
+    }
+    purchaseOrders.push({ po_number: poNum, starting_qty: String(qty), waste_description: desc, tab_name: '' });
+    activeWasteTab[poNum] = desc;
+    overlay.remove();
+    renderDashboard();
+    scheduleSave();
+    toast('Waste category added', 'ok');
+  };
+  setTimeout(() => overlay.querySelector('#aw-desc').focus(), 100);
+}
+
+function renameWasteTab(poNum, wasteDesc) {
+  const poInfo = purchaseOrders.find(p => p.po_number === poNum && p.waste_description === wasteDesc);
+  if (!poInfo) return;
+  const currentLabel = poInfo.tab_name || poInfo.waste_description || 'Default';
+  showModal('Rename Tab', 'Tab label', currentLabel, async (name) => {
+    poInfo.tab_name = name;
+    renderDashboard();
+    scheduleSave();
+    toast('Tab renamed', 'ok');
+  });
+}
+
 function deletePO(poNum) {
-  showConfirm('Delete PO completely?', `Are you sure you want to permanently delete PO ${esc(poNum)} and ALL of its hauling entries?`, () => {
+  showConfirm('Delete PO completely?', `Are you sure you want to permanently delete PO ${esc(poNum)} and ALL of its waste categories and hauling entries?`, () => {
     cellData = cellData.filter(r => r.po_number !== poNum);
     purchaseOrders = purchaseOrders.filter(p => p.po_number !== poNum);
+    delete activeWasteTab[poNum];
     
-    // Also cleanup threshold if it exists
-    if (thresholds[poNum]) {
-      delete thresholds[poNum];
-      if (activeSheet) api.data.saveThreshold(activeSheet, { po_number: poNum, warn: 1000, danger: 0 }).catch(() => {});
-    }
+    // Also cleanup thresholds
+    Object.keys(thresholds).forEach(k => {
+      if (k === poNum || k.startsWith(poNum + '|||')) {
+        delete thresholds[k];
+      }
+    });
     
     recomputeAllBalances();
     renderDashboard();
@@ -1041,23 +1254,27 @@ function getAlertRows() {
   const { groups } = groupByPO();
   const alerts = [];
   Object.keys(groups).forEach(po => {
-    const entries = groups[po];
-    if (!entries || !entries.length) return;
-    const lastEntry = entries[entries.length - 1];
-    const bv = parseNum(lastEntry.running_balance);
-    if (isNaN(bv)) return;
-    const thr = getThreshold(po);
-    const ri = lastEntry._idx;
+    const wasteGroups = groups[po] || {};
+    Object.keys(wasteGroups).forEach(wd => {
+      const entries = wasteGroups[wd];
+      if (!entries || !entries.length) return;
+      const lastEntry = entries[entries.length - 1];
+      const bv = parseNum(lastEntry.running_balance);
+      if (isNaN(bv)) return;
+      const thr = getThreshold(po, wd);
+      const ri = lastEntry._idx;
 
-    const poInfo = purchaseOrders.find(p => p.po_number === po);
-    const startingQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
-    const lastDate = lastEntry.hauling_date || 'N/A';
-    const totalUsed = entries.reduce((sum, r) => sum + (parseNum(r.quantity) || 0), 0);
-    const lastQty = parseNum(lastEntry.quantity) || 0;
-    const alertData = { ri, bv, po, startingQty, lastDate, totalUsed, lastQty };
+      const poInfoList = purchaseOrders.filter(p => p.po_number === po && p.waste_description === wd);
+      const poInfo = poInfoList[0];
+      const startingQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
+      const lastDate = lastEntry.hauling_date || 'N/A';
+      const totalUsed = entries.reduce((sum, r) => sum + (parseNum(r.quantity) || 0), 0);
+      const lastQty = parseNum(lastEntry.quantity) || 0;
+      const alertData = { ri, bv, po, wd, startingQty, lastDate, totalUsed, lastQty };
 
-    if (bv <= thr.danger) alerts.push({ ...alertData, level: 'DANGER' });
-    else if (bv <= thr.warn) alerts.push({ ...alertData, level: 'WARNING' });
+      if (bv <= thr.danger) alerts.push({ ...alertData, level: 'DANGER' });
+      else if (bv <= thr.warn) alerts.push({ ...alertData, level: 'WARNING' });
+    }); // end wd
   });
   return alerts;
 }
@@ -1070,10 +1287,15 @@ let alertDebounce = null;
 function silentReseedAlertKeys() {
   const current = getAlertRows();
   // Update keys for POs still in alert
-  current.forEach(a => { lastAlertKey[a.po] = `${a.level}:${a.bv}`; });
+  current.forEach(a => { 
+    const key = `${a.po}|||${a.wd || ''}`;
+    lastAlertKey[key] = `${a.level}:${a.bv}`; 
+  });
   // Remove keys for POs that are no longer in alert
-  Object.keys(lastAlertKey).forEach(po => {
-    if (!current.find(a => a.po === po)) delete lastAlertKey[po];
+  Object.keys(lastAlertKey).forEach(key => {
+    if (key === '*') return;
+    const [po, wd] = key.split('|||');
+    if (!current.find(a => a.po === po && a.wd === wd)) delete lastAlertKey[key];
   });
 }
 
@@ -1088,7 +1310,8 @@ function checkAutoAlert() {
     
     // Identify NEW alerts, UPSCALED alerts, OR same level but balance dropped further (new hauling entry)
     const newAlerts = currentAlerts.filter(a => {
-      const state = lastAlertKey[a.po];            // e.g. "WARNING:3000"
+      const key = `${a.po}|||${a.wd || ''}`;
+      const state = lastAlertKey[key];            // e.g. "WARNING:3000"
       if (!state) return true;                     // First time this PO hits an alert
       const [prevLevel, prevBv] = state.split(':');
       if (prevLevel !== a.level) return true;      // Level escalated (WARN → DANGER)
@@ -1098,7 +1321,8 @@ function checkAutoAlert() {
 
     // Update the tracker for ALL currently active alerts to keep them silent
     currentAlerts.forEach(a => {
-      lastAlertKey[a.po] = `${a.level}:${a.bv}`;
+      const key = `${a.po}|||${a.wd || ''}`;
+      lastAlertKey[key] = `${a.level}:${a.bv}`;
     });
 
     // Derive active recipients for sending
@@ -1113,8 +1337,8 @@ function checkAutoAlert() {
 async function triggerEmail(al) {
   const sheetName = sheets.find(s => s.id === activeSheet)?.name || '';
   const payload = al.map(a => {
-    const thr = getThreshold(a.po);
-    const poInfo = purchaseOrders.find(p => p.po_number === a.po);
+    const thr = getThreshold(a.po, a.wd);
+    const poInfo = purchaseOrders.find(p => p.po_number === a.po && p.waste_description === a.wd);
     return { 
       po: a.po || `Row ${a.ri + 1}`, 
       level: a.level, 
@@ -1123,7 +1347,7 @@ async function triggerEmail(al) {
       lastQty: a.lastQty,
       lastDate: a.lastDate,
       totalUsed: a.totalUsed,
-      wasteDescription: poInfo?.waste_description || '',
+      wasteDescription: a.wd || poInfo?.waste_description || '',
       threshold: { danger: thr.danger, warn: thr.warn },
     };
   });
@@ -1279,9 +1503,12 @@ function openPODrawer(poNum) {
   const overlay = document.createElement('div');
   overlay.className = 'fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] anim-fadeIn';
   
-  const entries = groupByPO().groups[poNum] || [];
-  const poInfo = purchaseOrders.find(p => p.po_number === poNum);
+  const activeWD = activeWasteTab[poNum] || '';
+  const grp = groupByPO().groups[poNum] || {};
+  const entries = grp[activeWD] || [];
+  const poInfo = purchaseOrders.find(p => p.po_number === poNum && p.waste_description === activeWD);
   const startQty = poInfo ? parseNum(poInfo.starting_qty) : 0;
+  const thr = getThreshold(poNum, poInfo?.waste_description || '');
 
   overlay.innerHTML = `
   <div class="absolute inset-y-0 right-0 w-full max-w-[420px] bg-surface shadow-2xl border-l border-line flex flex-col transform transition-transform duration-300 translate-x-full po-drawer-content">
@@ -1314,10 +1541,37 @@ function openPODrawer(poNum) {
         </div>
         
         <div class="${TW.field}">
-          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-2.5">Waste Description</label>
+          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-2.5">Current Tab: Waste Description</label>
           <div class="relative">
             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-txt-3">${I.document}</span>
             <input id="d-desc" type="text" value="${esc(poInfo?.waste_description || '')}" class="${TW.input} !pl-10 !h-[48px] text-[15px] shadow-sm"/>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-2.5">All Waste Categories</label>
+          <div class="grid gap-2.5">
+            ${purchaseOrders.filter(p => p.po_number === poNum).map(w => `
+              <div class="flex items-center justify-between p-3.5 bg-surface-2 rounded-xl border border-line group">
+                <div class="flex flex-col">
+                  <span class="text-[13px] font-bold text-txt">${esc(w.waste_description)}</span>
+                  <span class="text-[10px] text-txt-3">${fmt(parseNum(w.starting_qty))} Starting Qty</span>
+                </div>
+                <button class="po-tab-del p-2 text-txt-3 hover:text-danger hover:bg-danger/10 rounded-lg transition-all opacity-0 group-hover:opacity-100" data-wd="${esc(w.waste_description)}" title="Delete Category">${I.trash}</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-line space-y-6">
+          <label class="${TW.label} !text-[11px] !font-bold !text-txt-3 uppercase tracking-widest mb-0">Threshold Settings</label>
+          <div class="${TW.field}">
+            <label class="${TW.label} !text-[11px] font-bold text-txt-2">Warning Level (balance ≤)</label>
+            <input id="d-thr-warn" type="text" value="${thr.warn.toLocaleString('en-US')}" inputmode="decimal" class="${TW.input} !h-[48px] text-[15px] shadow-sm"/>
+          </div>
+          <div class="${TW.field}">
+            <label class="${TW.label} !text-[11px] font-bold text-txt-2">Danger Level (balance ≤)</label>
+            <input id="d-thr-danger" type="text" value="${thr.danger.toLocaleString('en-US')}" inputmode="decimal" class="${TW.input} !h-[48px] text-[15px] shadow-sm"/>
           </div>
         </div>
       </div>
@@ -1346,6 +1600,8 @@ function openPODrawer(poNum) {
 
   const qInp = overlay.querySelector('#d-qty');
   qInp.addEventListener('input', window._fmtCommaInput);
+  overlay.querySelector('#d-thr-warn').addEventListener('input', window._fmtCommaInput);
+  overlay.querySelector('#d-thr-danger').addEventListener('input', window._fmtCommaInput);
 
   const close = () => {
     content.style.transform = 'translateX(100%)';
@@ -1354,41 +1610,83 @@ function openPODrawer(poNum) {
 
   overlay.querySelector('#drawer-close').onclick = close;
   overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') overlay.querySelector('#drawer-save').click(); });
 
   overlay.querySelector('#drawer-delete').onclick = () => {
     close();
     deletePO(poNum);
   };
 
+  overlay.querySelectorAll('.po-tab-del').forEach(btn => {
+    btn.onclick = () => {
+      const wd = btn.dataset.wd;
+      showConfirm('Delete Category?', `Are you sure you want to delete the "${wd}" category? This will remove all associated hauling entries.`, () => {
+        // Delete the waste category
+        purchaseOrders = purchaseOrders.filter(p => !(p.po_number === poNum && p.waste_description === wd));
+        // Delete associated hauling rows
+        cellData = cellData.filter(row => !(row.po_number === poNum && row.waste_description === wd));
+        
+        recomputeAllBalances();
+        if (activeWasteTab[poNum] === wd) delete activeWasteTab[poNum];
+        
+        // Refresh drawer and dashboard
+        close();
+        renderDashboard();
+        scheduleSave();
+        toast('Category deleted', 'warn');
+      });
+    };
+  });
+
   overlay.querySelector('#drawer-save').onclick = async () => {
     const btn = overlay.querySelector('#drawer-save');
     const newPO = overlay.querySelector('#d-po').value.trim();
     const newQty = parseNum(qInp.value) || 0;
     const newDesc = overlay.querySelector('#d-desc').value.trim();
+    const newThrWarn = parseNum(overlay.querySelector('#d-thr-warn').value) || 0;
+    const newThrDanger = parseNum(overlay.querySelector('#d-thr-danger').value) || 0;
 
     if (!newPO) return toast('PO Number required', 'warn');
 
     const origHtml = setButtonLoading(btn, true);
 
+    const oldWD = poInfo ? poInfo.waste_description : activeWD;
     if (poInfo) {
       poInfo.po_number = newPO;
       poInfo.starting_qty = String(newQty);
       poInfo.waste_description = newDesc;
-    }
+      poInfo.tab_name = poInfo.tab_name || '';
 
-    cellData.forEach(row => {
-      if (row.po_number === poNum) {
-        row.po_number = newPO;
+      cellData.forEach(row => {
+        if (row.po_number === poNum && row.waste_description === oldWD) {
+          row.po_number = newPO;
+          row.waste_description = newDesc;
+        }
+      });
+
+      // Update active tab tracking
+      if (activeWasteTab[poNum] === oldWD) {
+        delete activeWasteTab[poNum];
+        activeWasteTab[newPO] = newDesc;
       }
-    });
+    }
 
     if (activeSheet) {
       try {
         await api.data.saveRows(activeSheet, cellData, purchaseOrders);
+        await api.data.saveThreshold(activeSheet, { po_number: newPO, waste_description: newDesc, warn: newThrWarn, danger: newThrDanger });
+        
+        // Update local thresholds state
+        const oldKey = `${poNum}|||${oldWD}`;
+        const newKey = `${newPO}|||${newDesc}`;
+        if (oldKey !== newKey) delete thresholds[oldKey];
+        thresholds[newKey] = { warn: newThrWarn, danger: newThrDanger };
+
         toast('PO Updated Successfully', 'ok');
         close();
         recomputeAllBalances();
         renderDashboard();
+        checkAutoAlert();
       } catch (err) {
         toast('Error saving changes: ' + err.message, 'danger');
         setButtonLoading(btn, false, origHtml);
@@ -1402,16 +1700,20 @@ function openPODrawer(poNum) {
   };
 }
 
-function openThresholdModal(poNum = '*') {
+function openThresholdModal(poNum = '*', wasteDesc = '') {
   const overlay = document.createElement('div');
   overlay.className = TW.overlay;
   
   const isDefault = poNum === '*';
-  const displayTitle = isDefault ? 'Default Threshold Settings' : `Threshold for ${poNum}`;
-  const displaySub = isDefault ? 'Set fallback balance levels that trigger email alerts' : `Set custom balance levels that trigger alerts for ${poNum}`;
+  const displayTitle = isDefault ? 'Default Threshold Settings' : `Threshold for ${poNum}${wasteDesc ? ' (' + wasteDesc + ')' : ''}`;
+  const displaySub = isDefault ? 'Set fallback balance levels that trigger email alerts' : `Set custom balance levels that trigger alerts for this specific waste stream`;
   
-  if (!thresholds[poNum]) thresholds[poNum] = { warn: 1000, danger: 0 };
-  const thr = thresholds[poNum];
+  const key = isDefault ? '*' : `${poNum}|||${wasteDesc}`;
+  if (!thresholds[key]) {
+    const existing = getThreshold(poNum, wasteDesc);
+    thresholds[key] = { warn: existing.warn, danger: existing.danger };
+  }
+  const thr = thresholds[key];
 
   overlay.innerHTML = `
   <div class="${TW.modal}">
@@ -1430,27 +1732,29 @@ function openThresholdModal(poNum = '*') {
   overlay.querySelector('#thr-danger').addEventListener('input', window._fmtCommaInput);
   overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') overlay.querySelector('#modal-save').click(); });
   overlay.querySelector('#modal-save').onclick = async () => {
     const saveBtn = overlay.querySelector('#modal-save');
     const w = parseNum(overlay.querySelector('#thr-warn').value) || 0;
     const d = parseNum(overlay.querySelector('#thr-danger').value) || 0;
-    thresholds[poNum].warn = w;
-    thresholds[poNum].danger = d;
+    thresholds[key].warn = w;
+    thresholds[key].danger = d;
 
     // Reseed lastAlertKey with the current state under the NEW threshold
     // so checkAutoAlert won't re-fire for data that hasn't changed.
     const currentAlerts = getAlertRows();
     currentAlerts.forEach(a => {
-      lastAlertKey[a.po] = `${a.level}:${a.bv}`;
+      const aKey = `${a.po}|||${a.wd || ''}`;
+      lastAlertKey[aKey] = `${a.level}:${a.bv}`;
     });
     // If this PO is no longer in alert under the new threshold, clear its key
-    if (!currentAlerts.find(a => a.po === poNum)) {
-      delete lastAlertKey[poNum];
+    if (!currentAlerts.find(a => a.po === poNum && a.wd === wasteDesc)) {
+      delete lastAlertKey[key];
     }
 
     const origHtml = setButtonLoading(saveBtn, true);
     try {
-      if (activeSheet) await api.data.saveThreshold(activeSheet, { po_number: poNum, warn: w, danger: d });
+      if (activeSheet) await api.data.saveThreshold(activeSheet, { po_number: poNum, waste_description: wasteDesc, warn: w, danger: d });
       overlay.remove();
       recomputeAllBalances();
       renderDashboard();
@@ -1906,8 +2210,8 @@ function openEditShareModal(token, currentLabel, currentExpires, currentPOList, 
 //  EXPORT CSV
 // ══════════════════════════════════════════════════════════
 function exportCSV() {
-  const headers = ['P.O. No.','Hauling Date','Quantity','Running Balance','Invoice No.'];
-  const keys = ['po_number','hauling_date','quantity','running_balance','invoice_no'];
+  const headers = ['P.O. No.','Waste Description','Hauling Date','Quantity','Running Balance','Invoice No.'];
+  const keys = ['po_number','waste_description','hauling_date','quantity','running_balance','invoice_no'];
   const rows = cellData.map(row => keys.map(k => `"${String(row[k] ?? '').replace(/"/g, '""')}"`).join(','));
   const csv = [headers.map(h => `"${h}"`).join(','), ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });

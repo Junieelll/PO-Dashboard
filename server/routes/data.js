@@ -37,13 +37,13 @@ router.put('/:sheetId/rows', async (req, res) => {
 
     // 1. Save Purchase Orders
     if (Array.isArray(purchaseOrders) && purchaseOrders.length > 0) {
-      const poCols = ['sheet_id', 'po_number', 'starting_qty', 'waste_description'];
+      const poCols = ['sheet_id', 'po_number', 'starting_qty', 'waste_description', 'tab_name'];
       const poValues = [];
       const poParams = [];
       let pi = 1;
       for (const po of purchaseOrders) {
-        poValues.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++})`);
-        poParams.push(sheetId, po.po_number ?? '', po.starting_qty ?? '0', po.waste_description ?? '');
+        poValues.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
+        poParams.push(sheetId, po.po_number ?? '', po.starting_qty ?? '0', po.waste_description ?? '', po.tab_name ?? '');
       }
       await client.query(
         `INSERT INTO purchase_orders (${poCols.join(', ')}) VALUES ${poValues.join(', ')}`,
@@ -53,22 +53,23 @@ router.put('/:sheetId/rows', async (req, res) => {
 
     // 2. Save Entries
     if (cellData.length > 0) {
-      const cols = ['sheet_id', 'position', 'po_number', 'hauling_date', 'quantity', 'running_balance', 'invoice_no', 'remarks'];
+      const cols = ['sheet_id', 'position', 'po_number', 'waste_description', 'hauling_date', 'quantity', 'running_balance', 'invoice_no', 'remarks'];
       const values = [];
       const params = [];
       let pi = 1;
 
       for (let i = 0; i < cellData.length; i++) {
         const r = cellData[i];
-        values.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
+        values.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++}, $${pi++})`);
         params.push(
           sheetId, i,
-          r.po_number       ?? '',
-          r.hauling_date    ?? '',
-          r.quantity        ?? '',
-          r.running_balance ?? '',
-          r.invoice_no      ?? '',
-          r.remarks         ?? ''
+          r.po_number         ?? '',
+          r.waste_description ?? '',
+          r.hauling_date      ?? '',
+          r.quantity          ?? '',
+          r.running_balance   ?? '',
+          r.invoice_no        ?? '',
+          r.remarks           ?? ''
         );
       }
 
@@ -90,14 +91,15 @@ router.put('/:sheetId/rows', async (req, res) => {
 // PUT /data/:sheetId/threshold
 router.put('/:sheetId/threshold', async (req, res) => {
   const { sheetId } = req.params;
-  const { po_number, danger, warn } = req.body;
-  const po = po_number || '*'; // fallback to default
+  const { po_number, waste_description, danger, warn } = req.body;
+  const po = po_number || '*'; 
+  const wd = waste_description || '';
   if (!await ownsSheet(req.user.id, sheetId)) return res.status(403).json({ error: 'Access denied' });
   try {
     await db.query(
-      `INSERT INTO thresholds (sheet_id, po_number, danger_val, warn_val) VALUES ($1, $2, $3, $4)
-       ON CONFLICT (sheet_id, po_number) DO UPDATE SET danger_val = $3, warn_val = $4`,
-      [sheetId, po, danger, warn]
+      `INSERT INTO thresholds (sheet_id, po_number, waste_description, danger_val, warn_val) VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (sheet_id, po_number, waste_description) DO UPDATE SET danger_val = $4, warn_val = $5`,
+      [sheetId, po, wd, danger, warn]
     );
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }

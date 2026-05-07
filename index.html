@@ -175,12 +175,55 @@ tailwind.config = {
   }
   .c-cal-day.selected { background: #7c5cfc !important; color: white !important; font-weight: 600; }
 
-  /* Active tab indicator */
-  .tab-active::after {
-    content: ''; position: absolute;
-    bottom: -10px; left: 16px; right: 16px; height: 2px;
-    background: linear-gradient(90deg, #7c5cfc, #2dd4bf);
-    border-radius: 2px;
+  /* ── Modern Tabs ── */
+  .tabs-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    background: var(--surface-2);
+    border-radius: 14px;
+    width: max-content;
+    max-width: 100%;
+  }
+  .po-waste-tab {
+    position: relative;
+    z-index: 2;
+    padding: 7px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    border-radius: 10px;
+    transition: color 0.3s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+  }
+  .po-waste-tab:hover { color: var(--text); }
+  .po-waste-tab.active { color: #fff !important; }
+
+  .tab-pill {
+    position: absolute;
+    top: 6px;
+    height: calc(100% - 12px);
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 10px;
+    z-index: 1;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  /* ── PO Card Hover ── */
+  .po-card {
+    border: 1px solid var(--border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .po-card:hover {
+    border-color: var(--border-lit);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
   }
 
   /* Table row states */

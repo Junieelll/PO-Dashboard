@@ -36,16 +36,17 @@ async function migrate() {
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS po_entries (
-        id              SERIAL PRIMARY KEY,
-        sheet_id        INT  NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,
-        position        INT  NOT NULL DEFAULT 0,
-        po_number       TEXT NOT NULL DEFAULT '',
-        hauling_date    TEXT NOT NULL DEFAULT '',
-        quantity        TEXT NOT NULL DEFAULT '',
-        running_balance TEXT NOT NULL DEFAULT '',
-        invoice_no      TEXT NOT NULL DEFAULT '',
-        remarks         TEXT NOT NULL DEFAULT '',
-        created_at      TIMESTAMPTZ DEFAULT NOW()
+        id                SERIAL PRIMARY KEY,
+        sheet_id          INT  NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,
+        position          INT  NOT NULL DEFAULT 0,
+        po_number         TEXT NOT NULL DEFAULT '',
+        waste_description TEXT NOT NULL DEFAULT '',
+        hauling_date      TEXT NOT NULL DEFAULT '',
+        quantity          TEXT NOT NULL DEFAULT '',
+        running_balance   TEXT NOT NULL DEFAULT '',
+        invoice_no        TEXT NOT NULL DEFAULT '',
+        remarks           TEXT NOT NULL DEFAULT '',
+        created_at        TIMESTAMPTZ DEFAULT NOW()
       )
     `);
     console.log('✅  Table: po_entries');
@@ -55,23 +56,24 @@ async function migrate() {
         id                SERIAL PRIMARY KEY,
         sheet_id          INT  NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,
         po_number         TEXT NOT NULL DEFAULT '',
-        starting_qty      TEXT NOT NULL DEFAULT '',
+        starting_qty      TEXT NOT NULL DEFAULT '0',
         waste_description TEXT NOT NULL DEFAULT '',
+        tab_name          TEXT NOT NULL DEFAULT '',
         created_at        TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE (sheet_id, po_number)
+        UNIQUE (sheet_id, po_number, waste_description)
       )
     `);
     console.log('✅  Table: purchase_orders');
 
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS thresholds (
-        id         SERIAL PRIMARY KEY,
-        sheet_id   INT              NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,
-        po_number  VARCHAR(100)     NOT NULL DEFAULT '*',
-        danger_val DOUBLE PRECISION NOT NULL DEFAULT 0,
-        warn_val   DOUBLE PRECISION NOT NULL DEFAULT 1000,
-        UNIQUE (sheet_id, po_number)
+        id                SERIAL PRIMARY KEY,
+        sheet_id          INT              NOT NULL REFERENCES sheets(id) ON DELETE CASCADE,
+        po_number         VARCHAR(100)     NOT NULL DEFAULT '*',
+        waste_description TEXT             NOT NULL DEFAULT '',
+        danger_val        DOUBLE PRECISION NOT NULL DEFAULT 0,
+        warn_val          DOUBLE PRECISION NOT NULL DEFAULT 1000,
+        UNIQUE (sheet_id, po_number, waste_description)
       )
     `);
     console.log('✅  Table: thresholds');

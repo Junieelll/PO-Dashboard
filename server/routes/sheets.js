@@ -93,23 +93,24 @@ router.get('/:id/full', async (req, res) => {
     if (!owned.length) return res.status(403).json({ error: 'Access denied' });
 
     const { rows: entries } = await db.query(
-      `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, remarks
+      `SELECT po_number, waste_description, hauling_date, quantity, running_balance, invoice_no, remarks
        FROM po_entries WHERE sheet_id = $1 ORDER BY position ASC`,
       [sheetId]
     );
 
     const { rows: purchaseOrders } = await db.query(
-      `SELECT po_number, starting_qty, waste_description FROM purchase_orders WHERE sheet_id = $1`,
+      `SELECT po_number, starting_qty, waste_description, tab_name FROM purchase_orders WHERE sheet_id = $1`,
       [sheetId]
     );
 
     const { rows: thresholdRows } = await db.query(
-      'SELECT po_number, danger_val AS danger, warn_val AS warn FROM thresholds WHERE sheet_id = $1',
+      'SELECT po_number, waste_description, danger_val AS danger, warn_val AS warn FROM thresholds WHERE sheet_id = $1',
       [sheetId]
     );
 
     const thresholdDict = thresholdRows.reduce((acc, t) => {
-      acc[t.po_number] = { danger: t.danger, warn: t.warn };
+      const key = t.po_number === '*' ? '*' : `${t.po_number}|||${t.waste_description || ''}`;
+      acc[key] = { danger: t.danger, warn: t.warn };
       return acc;
     }, {});
     
