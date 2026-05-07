@@ -1051,7 +1051,10 @@ function showAddHaulingModal(poNum, wasteDesc) {
   overlay.innerHTML = `
   <div class="${TW.modal}">
     <h2 class="${TW.modalH2}">${I.plus} Add Hauling</h2>
-    <p class="${TW.modalSub}">Adding hauling entry for <strong>${esc(poNum)}</strong></p>
+    <div class="flex items-center gap-2 mt-1 mb-6">
+      <span class="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider border border-accent/20">${esc(poNum)}</span>
+      <span class="px-2 py-0.5 rounded-md bg-surface-3 text-txt-3 text-[10px] font-bold uppercase tracking-wider border border-line">${esc(wasteDesc)}</span>
+    </div>
     <div class="${TW.field}"><label class="${TW.label}">Hauling Date</label>
       <div class="c-datepicker relative" id="nh-dp">
         <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 has-value" id="nh-dp-trigger" onclick="window._toggleDp('nh-dp')">
@@ -1171,7 +1174,10 @@ function showAddWasteModal(poNum) {
   overlay.innerHTML = `
   <div class="${TW.modal}">
     <h2 class="${TW.modalH2}">${I.plus} Add Waste Category</h2>
-    <p class="${TW.modalSub}">Add a new waste category to PO <strong>${esc(poNum)}</strong></p>
+    <div class="flex items-center gap-2 mt-1 mb-6">
+      <span class="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider border border-accent/20">${esc(poNum)}</span>
+      <span class="px-2 py-0.5 rounded-md bg-surface-3 text-txt-3 text-[10px] font-bold uppercase tracking-wider border border-line">NEW CATEGORY</span>
+    </div>
     <div class="${TW.field}"><label class="${TW.label}">Waste Description</label><input id="aw-desc" placeholder="e.g. Chemical Waste" class="${TW.input}"/></div>
     <div class="${TW.field}"><label class="${TW.label}">Starting Quantity</label><input id="aw-qty" type="text" placeholder="e.g. 50,000" inputmode="decimal" class="${TW.input}"/></div>
     <div class="${TW.modalActions}">

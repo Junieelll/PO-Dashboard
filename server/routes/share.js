@@ -117,14 +117,14 @@ router.get('/view/:token', async (req, res) => {
     if (link.po_list && Array.isArray(link.po_list)) {
       // Filtered by selected POs
       const { rows } = await db.query(
-        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, remarks
+        `SELECT po_number, waste_description, hauling_date, quantity, running_balance, invoice_no, remarks
          FROM po_entries WHERE sheet_id = $1 AND po_number = ANY($2::text[]) ORDER BY position ASC`,
         [sheetId, link.po_list]
       );
       entries = rows;
 
       const { rows: pos } = await db.query(
-        `SELECT po_number, starting_qty, waste_description
+        `SELECT po_number, starting_qty, waste_description, tab_name
          FROM purchase_orders WHERE sheet_id = $1 AND po_number = ANY($2::text[])`,
         [sheetId, link.po_list]
       );
@@ -132,14 +132,14 @@ router.get('/view/:token', async (req, res) => {
     } else {
       // All POs
       const { rows } = await db.query(
-        `SELECT po_number, hauling_date, quantity, running_balance, invoice_no, remarks
+        `SELECT po_number, waste_description, hauling_date, quantity, running_balance, invoice_no, remarks
          FROM po_entries WHERE sheet_id = $1 ORDER BY position ASC`,
         [sheetId]
       );
       entries = rows;
 
       const { rows: pos } = await db.query(
-        `SELECT po_number, starting_qty, waste_description
+        `SELECT po_number, starting_qty, waste_description, tab_name
          FROM purchase_orders WHERE sheet_id = $1`,
         [sheetId]
       );
