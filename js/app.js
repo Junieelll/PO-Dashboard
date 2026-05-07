@@ -121,6 +121,164 @@ function toast(msg, type = 'ok') {
 }
 
 // ══════════════════════════════════════════════════════════
+//  FEATURE TOUR SYSTEM
+// ══════════════════════════════════════════════════════════
+class FeatureTour {
+  constructor(steps) {
+    this.steps = steps;
+    this.current = 0;
+    this.overlay = null;
+    this.spotlight = null;
+    this.tooltip = null;
+  }
+
+  init() {
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'tour-overlay';
+    this.overlay.innerHTML = `
+      <div class="tour-spotlight"></div>
+      <div class="tour-tooltip">
+        <div class="tour-tooltip-arrow"></div>
+        <div id="tour-content"></div>
+        <div class="flex justify-between items-center mt-6">
+          <div class="text-[11px] text-txt-3 font-bold uppercase tracking-widest" id="tour-step-count"></div>
+          <div class="flex gap-2">
+            <button id="tour-skip" class="px-3 py-1.5 text-[11px] font-bold text-txt-3 hover:text-white transition-colors">Skip</button>
+            <button id="tour-next" class="px-4 py-1.5 bg-accent text-white rounded-lg text-[11px] font-bold shadow-lg hover:shadow-accent/20 transition-all">Next</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(this.overlay);
+    this.spotlight = this.overlay.querySelector('.tour-spotlight');
+    this.tooltip = this.overlay.querySelector('.tour-tooltip');
+
+    this.overlay.querySelector('#tour-skip').onclick = () => this.end();
+    this.overlay.querySelector('#tour-next').onclick = () => this.next();
+  }
+
+  start() {
+    if (!this.overlay) this.init();
+    this.overlay.classList.add('active');
+    this.current = 0;
+    this.showStep();
+    
+    // Keep connected on scroll/resize
+    this._sync = () => this.updatePosition(false);
+    window.addEventListener('scroll', this._sync, { passive: true });
+    window.addEventListener('resize', this._sync, { passive: true });
+  }
+
+  showStep() {
+    const step = this.steps[this.current];
+    const target = document.querySelector(step.selector);
+    
+    if (!target) {
+      console.warn('Tour target not found:', step.selector);
+      this.next();
+      return;
+    }
+
+    this.overlay.querySelector('#tour-content').innerHTML = `
+      <h4 class="text-accent text-[10px] font-bold uppercase tracking-[2px] mb-2">${step.tag || 'New Feature'}</h4>
+      <h3 class="text-white text-lg font-bold mb-2 tracking-tight">${step.title}</h3>
+      <p class="text-txt-3 text-[13px] leading-relaxed">${step.desc}</p>
+    `;
+    this.overlay.querySelector('#tour-step-count').textContent = `Step ${this.current + 1} of ${this.steps.length}`;
+    this.overlay.querySelector('#tour-next').textContent = this.current === this.steps.length - 1 ? 'Finish' : 'Next';
+
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Initial position update after a tiny delay for the scroll to start/settle
+    setTimeout(() => this.updatePosition(true), 50);
+  }
+
+  updatePosition(animate = true) {
+    const step = this.steps[this.current];
+    const target = document.querySelector(step.selector);
+    if (!target || !this.overlay.classList.contains('active')) return;
+
+    const rect = target.getBoundingClientRect();
+    const pad = 10;
+    
+    if (!animate) this.spotlight.style.transition = 'none';
+    else this.spotlight.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    this.spotlight.style.width = `${rect.width + pad * 2}px`;
+    this.spotlight.style.height = `${rect.height + pad * 2}px`;
+    this.spotlight.style.top = `${rect.top - pad}px`;
+    this.spotlight.style.left = `${rect.left - pad}px`;
+
+    const toolRect = this.tooltip.getBoundingClientRect();
+    let top = rect.bottom + 25;
+    let left = rect.left + (rect.width / 2) - (toolRect.width / 2);
+
+    if (left < 20) left = 20;
+    if (left + toolRect.width > window.innerWidth - 20) left = window.innerWidth - toolRect.width - 20;
+    if (top + toolRect.height > window.innerHeight - 20) top = rect.top - toolRect.height - 25;
+
+    if (!animate) this.tooltip.style.transition = 'none';
+    else this.tooltip.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    this.tooltip.style.top = `${top}px`;
+    this.tooltip.style.left = `${left}px`;
+    this.tooltip.classList.add('active');
+
+    const arrow = this.tooltip.querySelector('.tour-tooltip-arrow');
+    const isTop = top < rect.top;
+    arrow.style.top = isTop ? 'auto' : '-8px';
+    arrow.style.bottom = isTop ? '-8px' : 'auto';
+    arrow.style.left = `${rect.left + (rect.width/2) - left - 8}px`;
+  }
+
+  next() {
+    this.current++;
+    if (this.current < this.steps.length) {
+      this.showStep();
+    } else {
+      this.end();
+    }
+  }
+
+  end() {
+    this.overlay.classList.remove('active');
+    this.tooltip.classList.remove('active');
+    window.removeEventListener('scroll', this._sync);
+    window.removeEventListener('resize', this._sync);
+    if (this.versionKey) localStorage.setItem('tour_seen_' + this.versionKey, 'true');
+  }
+}
+
+// ── Define Current Feature Tour ───────────────────────────
+const tabUpdateTour = new FeatureTour([
+  {
+    selector: '.tabs-container',
+    tag: 'Big Update',
+    title: 'Multi-Waste Support',
+    desc: 'You can now track multiple waste types (e.g., Mixed Waste, Chemical Waste) under a single PO. Each waste type has its own balance and hauling history.'
+  },
+  {
+    selector: '.po-add-waste',
+    tag: 'Dynamic Flow',
+    title: 'Add New Categories',
+    desc: 'Need to track a new waste stream for this PO? Click this button to instantly create a new tab with its own starting quantity.'
+  },
+  {
+    selector: '.po-metrics',
+    tag: 'Visual Polish',
+    title: 'Animated Statistics',
+    desc: 'Starting and Remaining quantities now update with smooth "odometer" animations when you switch between tabs.'
+  },
+  {
+    selector: '.po-edit-btn',
+    tag: 'Management',
+    title: 'Improved Edit Drawer',
+    desc: 'Manage all your waste categories in one place. You can rename tabs or delete individual waste streams directly from the Edit PO drawer.'
+  }
+]);
+tabUpdateTour.versionKey = 'v1_tabs'; // Unique key for this tour
+
+// ══════════════════════════════════════════════════════════
 //  AUTH
 // ══════════════════════════════════════════════════════════
 function renderAuth(isLogin = true) {
@@ -559,6 +717,12 @@ function renderDashboard() {
     bindPOCardEvents(card);
     updateTabPill(card);
   });
+
+  // ── Trigger Feature Tour ────────────────────────────────
+  if (!localStorage.getItem('tour_seen_v1_tabs') && purchaseOrders.length > 0) {
+    // Small delay to ensure animations and layout are ready
+    setTimeout(() => tabUpdateTour.start(), 1200);
+  }
 
   // Ensure FAB resets on render
   if (window.updateFAB) window.updateFAB();
