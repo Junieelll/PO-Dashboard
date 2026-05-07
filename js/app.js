@@ -795,7 +795,7 @@ function buildPOCardHtml(poNum, groups) {
           <button class="po-edit-btn bg-transparent border-none text-txt-3 hover:text-accent cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.pencil} Edit PO</button>
         </div>
       </div>
-      <div class="flex gap-9 items-center">
+      <div class="flex gap-9 items-center po-metrics">
         <div class="flex flex-col gap-[3px] text-right">
           <span class="text-[10px] font-semibold text-txt-3 uppercase tracking-[1px]">Starting Qty</span>
           <span class="po-stat-value po-stat-start text-[22px] font-bold tabular-nums tracking-tight transition-all duration-500" data-val="${startQty}">${isNaN(startQty) ? '--' : fmt(startQty)}</span>
