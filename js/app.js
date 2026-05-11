@@ -762,7 +762,7 @@ function buildPOCardHtml(poNum, groups) {
   }[alertStatus];
   
   const statColor = { ok: 'text-ok', warn: 'text-warn', danger: 'text-danger' }[alertStatus];
-  const thCls = 'py-3 px-4 text-[10px] font-semibold text-txt-3 uppercase tracking-[0.6px] text-left border-b border-line bg-transparent whitespace-nowrap';
+  const thCls = 'py-3.5 px-4 text-[10px] font-bold text-txt-3 uppercase tracking-[0.8px] text-left border-b border-line whitespace-nowrap';
 
   const tabsHtml = wasteDescs.length > 0 ? `
     <div class="px-7 py-3 bg-surface border-b border-line overflow-x-auto">
@@ -787,10 +787,10 @@ function buildPOCardHtml(poNum, groups) {
         <div class="text-lg font-bold tracking-tight text-txt flex items-center group">
           <span class="text-[11px] text-white font-bold mr-3 bg-[#ff6b81] px-2.5 py-1 rounded-full uppercase tracking-wide">P.O. NUMBER</span>
           ${esc(poNum)}
+          <span class="ml-2.5 px-2.5 py-1 rounded-lg bg-surface-2 text-txt-3 text-[10px] font-bold border border-line-lit shadow-sm group-hover:border-accent group-hover:text-txt transition-all">${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}</span>
           ${statusBadge}
         </div>
         <div class="text-xs text-txt-3 font-medium flex items-center gap-4 mt-1">
-          <span class="flex items-center gap-1.5">${I.document} ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}</span>
           <button class="po-thr-btn bg-transparent border-none text-rose-400 hover:text-rose-500 cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.cog} Set Threshold</button>
           <button class="po-edit-btn bg-transparent border-none text-txt-3 hover:text-accent cursor-pointer flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest transition-colors" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.pencil} Edit PO</button>
         </div>
@@ -811,7 +811,7 @@ function buildPOCardHtml(poNum, groups) {
       <div class="flex-1 h-[7px] bg-surface-3 rounded-lg overflow-hidden"><div class="progress-${alertStatus} h-full rounded-lg transition-all duration-700" style="width:${pct}%"></div></div>
       <span class="text-[11px] font-semibold text-txt-3 whitespace-nowrap min-w-[64px] text-right">${pct}% hauled</span>
     </div>
-    <div class="overflow-x-auto">
+    <div class="po-table-container thin-scrollbar">
       <table class="po-table w-full border-collapse tabular-nums m-0">
         <thead><tr>
           <th class="${thCls} w-10 px-2 text-center">
@@ -829,7 +829,7 @@ function buildPOCardHtml(poNum, groups) {
           <th class="${thCls}"></th>
         </tr></thead>
         <tbody>
-          ${entries.length > 0 ? entries.map((e, ei) => {
+          ${entries.length > 0 ? [...entries].reverse().map((e, ei) => {
             const bal = parseNum(e.running_balance);
             let rowCls = '';
             const thr2 = getThreshold(poNum, activeWD);
@@ -843,7 +843,7 @@ function buildPOCardHtml(poNum, groups) {
                   <svg class="absolute inset-0 w-full h-full text-white pointer-events-none opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all p-[2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                 </label>
               </td>
-              <td class="text-txt-3 text-[11px] font-medium text-center w-11 min-w-[44px] border-b border-line">${ei + 1}</td>
+              <td class="text-txt-3 text-[11px] font-medium text-center w-11 min-w-[44px] border-b border-line">${entries.length - ei}</td>
               <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><span class="date-cell cursor-pointer text-[13px] text-txt font-normal py-0.5 px-1 rounded-md transition-colors duration-150 whitespace-nowrap hover:bg-accent/[0.06] hover:text-accent-2" data-ri="${e._idx}" tabindex="0">${formatDateDisplay(e.hauling_date) || '<span class="text-txt-3">Pick date</span>'}</span></div></td>
               <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent hover:bg-accent/[0.03]"><input class="cell-input bg-transparent border-none outline-none text-txt text-[13px] font-normal w-full tabular-nums text-right placeholder:text-txt-3" value="${numDisplay(e.quantity)}" data-ri="${e._idx}" data-col="quantity" placeholder="0" inputmode="decimal"/></div></td>
               <td class="p-0 border-b border-line text-[13px] h-[46px] align-middle"><div class="cell-wrap py-2 px-4 min-h-[46px] flex items-center justify-end cursor-text transition-colors duration-200 border-2 border-transparent"><span class="cell-readonly font-semibold text-[13px] ${balColor}" data-computed="balance" data-ri="${e._idx}">${isNaN(bal) ? '' : fmt(bal)}</span></div></td>
@@ -855,8 +855,14 @@ function buildPOCardHtml(poNum, groups) {
         </tbody>
       </table>
     </div>
-    <div class="py-3.5 px-7 flex justify-start">
+    ${entries.length > 8 ? `
+    <div class="px-7 py-2.5 bg-surface-2 border-b border-line text-[10px] text-txt-3 italic flex items-center gap-1.5 opacity-80">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+      Scroll to view more entries
+    </div>` : ''}
+    <div class="py-3.5 px-7 flex justify-start gap-2.5">
       <button class="po-add-entry inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.plus} Add hauling</button>
+      <button class="po-bulk-import inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-accent/20 rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-accent/5 text-accent hover:bg-accent hover:text-white [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]" data-po="${esc(poNum)}" data-wd="${esc(activeWD)}">${I.arrowDown} Bulk Import</button>
     </div>`;
 }
 
@@ -877,6 +883,10 @@ function bindPOCardEvents(cardEl) {
   
   cardEl.querySelectorAll('.po-add-entry').forEach(btn => { 
     btn.onclick = () => addHaulingToPO(btn.dataset.po, btn.dataset.wd); 
+  });
+
+  cardEl.querySelectorAll('.po-bulk-import').forEach(btn => { 
+    btn.onclick = () => openImportModal(btn.dataset.po, btn.dataset.wd); 
   });
   
   cardEl.querySelectorAll('.po-waste-tab').forEach(btn => {
@@ -1223,16 +1233,16 @@ function showAddHaulingModal(poNum, wasteDesc) {
       <div class="c-datepicker relative" id="nh-dp">
         <div class="c-date-trigger w-full flex items-center gap-2.5 py-[11px] px-3.5 text-[13px] font-normal rounded-xl border-[1.5px] border-line bg-surface-2 text-txt transition-colors duration-200 has-value" id="nh-dp-trigger" onclick="window._toggleDp('nh-dp')">
           <svg class="ico shrink-0 cursor-pointer text-txt-3 hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
-          <input id="nh-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3 cursor-text" placeholder="Type date or click calendar…" value="" onclick="event.stopPropagation()" />
+          <input id="nh-dp-label" class="bg-transparent border-none outline-none w-full p-0 text-txt placeholder:text-txt-3 cursor-text" placeholder="Type date or click calendar…" value="" onclick="event.stopPropagation()" autocomplete="off" />
         </div>
         <div class="c-cal" id="nh-dp-cal"></div>
       </div>
     </div>
     <div class="grid grid-cols-2 gap-3 mb-4">
-      <div class="${TW.field}"><label class="${TW.label}">Quantity Hauled</label><input id="nh-qty" type="text" placeholder="0" inputmode="decimal" class="${TW.input}"/></div>
-      <div class="${TW.field}"><label class="${TW.label}">Invoice No.</label><input id="nh-invoice" placeholder="e.g. 193" class="${TW.input}"/></div>
+      <div class="${TW.field}"><label class="${TW.label}">Quantity Hauled</label><input id="nh-qty" type="text" placeholder="0" inputmode="decimal" class="${TW.input}" autocomplete="off" /></div>
+      <div class="${TW.field}"><label class="${TW.label}">Invoice No.</label><input id="nh-invoice" placeholder="e.g. 193" class="${TW.input}" autocomplete="off" /></div>
     </div>
-    <div class="${TW.field} mb-0"><label class="${TW.label}">Remarks</label><textarea id="nh-remarks" placeholder="Optional notes about this hauling..." class="${TW.input} min-h-[85px] resize-y py-2.5 leading-snug"></textarea></div>
+    <div class="${TW.field} mb-0"><label class="${TW.label}">Remarks</label><textarea id="nh-remarks" placeholder="Optional notes about this hauling..." class="${TW.input} min-h-[85px] resize-y py-2.5 leading-snug" autocomplete="off"></textarea></div>
     <div class="${TW.modalActions}">
       <button class="${TW.ghostBtn}" id="modal-cancel">Cancel</button>
       <button class="${TW.primaryBtn}" id="modal-save">Add Entry</button>
@@ -1318,6 +1328,221 @@ function showAddHaulingModal(poNum, wasteDesc) {
   };
 }
 
+/**
+ * Bulk Import Modal
+ * Phase 1: Paste from Spreadsheet
+ * Phase 2: Preview, Map Columns, and Confirm
+ */
+function openImportModal(targetPo = null, targetWd = null) {
+  const overlay = document.createElement('div');
+  overlay.className = TW.overlay;
+  
+  // Phase 1: Paste Screen
+  overlay.innerHTML = `
+  <div class="${TW.modal} !max-w-[700px]">
+    <h2 class="${TW.modalH2}">${I.arrowDown} Bulk Import Hauling Entries</h2>
+    ${targetPo ? `
+    <div class="flex items-center gap-2 mt-1 mb-6">
+      <span class="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider border border-accent/20">Target PO: ${esc(targetPo)}</span>
+      <span class="px-2 py-0.5 rounded-md bg-surface-3 text-txt-3 text-[10px] font-bold uppercase tracking-wider border border-line">${esc(targetWd || 'Default')}</span>
+    </div>` : '<p class="${TW.modalSub}">Copy a block of cells from your Excel/Spreadsheet and paste it below.</p>'}
+    
+    <div class="mb-5">
+      <label class="${TW.label}">Paste Data Here</label>
+      <textarea id="import-pasted" class="${TW.input} min-h-[220px] font-mono text-[11px] leading-relaxed" placeholder="Date\tQuantity\tInvoice...\n9/11/2025\t12,000\t366..."></textarea>
+    </div>
+
+    <div class="flex justify-between items-center bg-surface-2 p-4 rounded-2xl border border-line mb-6">
+      <div class="flex items-center gap-3 text-txt-3">
+        <div class="p-2 bg-accent/10 rounded-lg text-accent">${I.clipboard}</div>
+        <div class="text-[12px]">
+          <p class="font-semibold text-txt-2 text-[13px]">Instruction</p>
+          <p class="leading-snug">The imported data will be added to <strong>${targetPo || 'the selected PO'}</strong>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="${TW.modalActions}">
+      <button class="${TW.ghostBtn}" id="import-cancel">Cancel</button>
+      <button class="${TW.primaryBtn}" id="import-next">Review Data ${I.arrowDown.replace('ico', 'ico w-4 h-4 ml-1')}</button>
+    </div>
+  </div>`;
+  
+  document.body.appendChild(overlay);
+  const textarea = overlay.querySelector('#import-pasted');
+  setTimeout(() => textarea.focus(), 100);
+
+  overlay.querySelector('#import-cancel').onclick = () => overlay.remove();
+  overlay.querySelector('#import-next').onclick = () => {
+    const raw = textarea.value.trim();
+    if (!raw) return toast('Please paste some data first', 'warn');
+    renderImportReview(overlay, raw, targetPo, targetWd);
+  };
+}
+
+function renderImportReview(overlay, rawData, targetPo, targetWd) {
+  // Parse rows (handle \n and \r\n)
+  const rows = rawData.split(/\r?\n/).map(line => line.split('\t')).filter(cells => cells.some(c => c.trim()));
+  if (rows.length === 0) return toast('No data found', 'warn');
+
+  // Internal state for mapping
+  let colMapping = {
+    po: -1,
+    qty: -1,
+    date: -1,
+    invoice: -1,
+    remarks: -1
+  };
+
+  // Try to auto-guess mapping based on headers or content
+  const firstRow = rows[0].map(c => c.toLowerCase().trim());
+  firstRow.forEach((val, idx) => {
+    if (val.includes('po') || val.includes('order')) colMapping.po = idx;
+    if (val.includes('qty') || val.includes('quantity')) colMapping.qty = idx;
+    if (val.includes('date') || val.includes('haul')) colMapping.date = idx;
+    if (val.includes('inv') || val.includes('bill')) colMapping.invoice = idx;
+    if (val.includes('rem') || val.includes('note')) colMapping.remarks = idx;
+  });
+
+  const renderReviewTable = () => {
+    const hasHeader = rows[0].some(c => isNaN(parseNum(c)) && !parseFlexibleDate(c));
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    
+    // Preview
+    const processed = dataRows.map(r => {
+      return {
+        po: targetPo || (colMapping.po !== -1 ? r[colMapping.po]?.trim() : ''),
+        qty: colMapping.qty !== -1 ? r[colMapping.qty] : '',
+        date: colMapping.date !== -1 ? r[colMapping.date] : '',
+        invoice: colMapping.invoice !== -1 ? r[colMapping.invoice] : '',
+        remarks: colMapping.remarks !== -1 ? r[colMapping.remarks] : ''
+      };
+    });
+
+    overlay.querySelector('.modal-body').innerHTML = `
+      <div class="flex flex-col gap-5">
+        <div class="bg-surface-2 p-5 rounded-2xl border border-line">
+          <label class="${TW.label} mb-3">Column Mapping</label>
+          <div class="grid grid-cols-4 gap-3">
+            ${['qty','date','invoice','remarks'].map(key => `
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[10px] text-txt-3 font-bold uppercase tracking-tight">${key}</span>
+                <select class="w-full bg-surface border border-line rounded-lg py-1.5 px-2 text-[11px] text-txt-2 outline-none focus:border-accent" data-map="${key}">
+                  <option value="-1">None</option>
+                  ${rows[0].map((_, i) => `<option value="${i}" ${colMapping[key] === i ? 'selected' : ''}>Col ${i+1}</option>`).join('')}
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="max-h-[300px] overflow-auto border border-line rounded-2xl bg-surface thin-scrollbar">
+          <table class="w-full text-left border-collapse text-[11px]">
+            <thead class="sticky top-0 bg-surface-3 z-10 shadow-sm">
+              <tr>
+                <th class="p-2.5 border-b border-line text-txt-3 font-bold uppercase">Date</th>
+                <th class="p-2.5 border-b border-line text-txt-3 font-bold uppercase text-right">Qty</th>
+                <th class="p-2.5 border-b border-line text-txt-3 font-bold uppercase">Invoice</th>
+                <th class="p-2.5 border-b border-line text-txt-3 font-bold uppercase">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${processed.slice(0, 50).map(p => `
+                <tr class="border-b border-line/50 hover:bg-surface-2/50 transition-colors">
+                  <td class="p-2.5 text-txt-3">${formatDateDisplay(p.date) || '<span class="text-danger">Invalid</span>'}</td>
+                  <td class="p-2.5 text-right font-mono">${fmt(parseNum(p.qty))}</td>
+                  <td class="p-2.5 text-txt-3">${esc(p.invoice || '-')}</td>
+                  <td class="p-2.5 text-txt-3 truncate max-w-[200px]">${esc(p.remarks || '')}</td>
+                </tr>
+              `).join('')}
+              ${processed.length > 50 ? `<tr><td colspan="4" class="p-4 text-center text-txt-3 italic">... and ${processed.length - 50} more rows</td></tr>` : ''}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex items-center gap-3 bg-accent/5 p-4 rounded-xl border border-accent/10">
+          <div class="text-accent">${I.bellAlert.replace('ico', 'ico w-5 h-5')}</div>
+          <p class="text-[12px] text-txt-2 leading-snug">
+            Importing <strong>${processed.length}</strong> entries into <strong>${targetPo}</strong>.
+          </p>
+        </div>
+      </div>`;
+
+    // Re-bind selects
+    overlay.querySelectorAll('select[data-map]').forEach(sel => {
+      sel.onchange = (e) => {
+        colMapping[e.target.dataset.map] = parseInt(e.target.value);
+        renderReviewTable();
+      };
+    });
+
+    overlay.querySelector('#import-save').onclick = () => {
+      const startCount = cellData.length;
+      
+      dataRows.forEach(r => {
+        const qty = parseNum(colMapping.qty !== -1 ? r[colMapping.qty] : 0);
+        const rawDate = colMapping.date !== -1 ? r[colMapping.date] : '';
+        const parsedDate = parseFlexibleDate(rawDate);
+        
+        if (isNaN(qty) || qty <= 0) return;
+
+        let formattedDate = '';
+        if (parsedDate) {
+          formattedDate = parsedDate.getFullYear() + '-' +
+                         String(parsedDate.getMonth() + 1).padStart(2, '0') + '-' +
+                         String(parsedDate.getDate()).padStart(2, '0');
+        } else {
+          formattedDate = rawDate.trim();
+        }
+
+        cellData.push({
+          po_number: targetPo,
+          waste_description: targetWd || '',
+          hauling_date: formattedDate,
+          quantity: String(qty),
+          running_balance: '',
+          invoice_no: colMapping.invoice !== -1 ? r[colMapping.invoice]?.trim() || '' : '',
+          remarks: colMapping.remarks !== -1 ? r[colMapping.remarks]?.trim() || '' : ''
+        });
+      });
+
+      const added = cellData.length - startCount;
+      if (added > 0) {
+        recomputeAllBalances();
+        overlay.remove();
+        renderDashboard();
+        scheduleSave();
+        checkAutoAlert();
+        toast(`Successfully imported ${added} entries`, 'ok');
+      } else {
+        toast('No valid entries found to import', 'warn');
+      }
+    };
+  };
+
+  overlay.innerHTML = `
+  <div class="${TW.modal} !max-w-[800px]">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="${TW.modalH2}">${I.clipboard} Review & Map Columns</h2>
+        <p class="text-txt-3 text-[12px] mt-0.5">Match your spreadsheet columns to the system fields below.</p>
+      </div>
+      <button class="p-2 hover:bg-surface-2 rounded-lg text-txt-3" id="import-close-preview">${I.xMark}</button>
+    </div>
+    
+    <div class="modal-body"></div>
+
+    <div class="${TW.modalActions}">
+      <button class="${TW.ghostBtn}" id="import-back">Back</button>
+      <button class="${TW.primaryBtn}" id="import-save">${I.plus.replace('ico', 'ico w-4 h-4 ml-1')} Confirm Import</button>
+    </div>
+  </div>`;
+
+  overlay.querySelector('#import-close-preview').onclick = () => overlay.remove();
+  overlay.querySelector('#import-back').onclick = () => openImportModal(targetPo, targetWd); 
+  
+  renderReviewTable();
+}
 
 function deleteRow(ri) {
   showConfirm('Delete entry?', `Remove this hauling entry?`, () => {
