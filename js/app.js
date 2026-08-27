@@ -51,6 +51,8 @@ let alertLog   = [];
 let saveTimer  = null;
 let lastAlertKey = {}; // Tracker for previously triggered alerts per PO
 let searchQuery  = '';
+let currentPage  = 1;
+const itemsPerPage = 10;
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -513,6 +515,7 @@ function renderApp() {
 
   renderTabs();
   renderToolbar();
+  setupDashboardDelegation();
   renderDashboard();
   renderAlertLog();
   checkAutoAlert();
@@ -587,13 +590,18 @@ function renderToolbar() {
     </div>
     <div class="relative w-full max-w-[280px]">
       <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-txt-3 [&_.ico]:w-4 [&_.ico]:h-4">${I.search}</div>
-      <input type="text" id="po-search" placeholder="Search PO numbers..." value="${esc(searchQuery)}" class="${TW.input} !pl-10 !py-2 text-[13px]" />
+      <input type="text" id="po-search" placeholder="Search PO or waste desc..." value="${esc(searchQuery)}" class="${TW.input} !pl-10 !py-2 text-[13px]" />
     </div>
   </div>`;
 
+  let searchTimeout;
   $('#po-search').oninput = (e) => { 
-    searchQuery = e.target.value.toLowerCase(); 
-    renderDashboard(); 
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      searchQuery = e.target.value.toLowerCase(); 
+      currentPage = 1;
+      renderDashboard(); 
+    }, 300);
   };
   $('#btn-add-entry').onclick = addPO;
   $('#btn-export').onclick = exportCSV;
@@ -642,18 +650,35 @@ function renderDashboard() {
         <p class="text-[13px] mb-5 font-normal">No PO entries yet</p>
         <button class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]" id="btn-empty-add">${I.plus} Add first entry</button>
       </div>`;
-    const btnAdd = section.querySelector('#btn-empty-add');
-    if (btnAdd) btnAdd.onclick = () => addPO();
     return;
   }
 
-  // BI Hero Section
-  let totalPoCount = order.length;
+  // 1. Filter order based on search
+  let filteredOrder = order;
+  if (searchQuery) {
+    filteredOrder = order.filter(poNum => {
+      const wasteDescs = Object.keys(groups[poNum] || {});
+      const matchesPO = poNum.toLowerCase().includes(searchQuery);
+      const matchingWDs = wasteDescs.filter(wd => wd.toLowerCase().includes(searchQuery));
+      const matchesWD = matchingWDs.length > 0;
+      
+      if (!matchesPO && !matchesWD) return false;
+      
+      // Auto-switch tab if found via waste description
+      if (matchesWD && !matchingWDs.includes(activeWasteTab[poNum])) {
+        activeWasteTab[poNum] = matchingWDs[0];
+      }
+      return true;
+    });
+  }
+
+  // 2. BI Hero Section
+  let totalPoCount = filteredOrder.length;
   let globalHauled = 0;
   let globalRemaining = 0;
   let alertCount = 0;
 
-  order.forEach(po => {
+  filteredOrder.forEach(po => {
     const wasteGroups = groups[po] || {};
     Object.keys(wasteGroups).forEach(wd => {
       const entries = wasteGroups[wd];
@@ -669,8 +694,9 @@ function renderDashboard() {
     });
   });
 
+  const animCls = searchQuery ? '' : ' anim-fadeUp';
   const heroHtml = `
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 anim-fadeUp">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8${animCls}">
     <div class="bg-surface border border-line p-5 rounded-[22px] shadow-sm flex flex-col gap-2">
       <span class="text-[10px] font-bold text-txt-3 uppercase tracking-wider flex items-center gap-1.5">${I.chartBar} Total Active POs</span>
       <span class="text-2xl font-bold text-txt tabular-nums tracking-tight">${totalPoCount}</span>
@@ -689,25 +715,32 @@ function renderDashboard() {
     </div>
   </div>`;
 
-  let html = heroHtml + '<div class="flex flex-col gap-6">';
-  let visibleCount = 0;
+  // 3. Pagination math
+  const totalItems = filteredOrder.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pagedOrder = filteredOrder.slice(startIndex, startIndex + itemsPerPage);
 
-  order.forEach(poNum => {
-    if (searchQuery && !poNum.toLowerCase().includes(searchQuery)) return;
-    visibleCount++;
-    html += `<div class="po-card bg-surface rounded-[28px] overflow-hidden anim-fadeUp transition-all duration-300 shadow-sm hover:border-line-lit hover:shadow-md" data-po="${esc(poNum)}">
+  let html = heroHtml + '<div class="flex flex-col gap-6" id="po-cards-container">';
+
+  pagedOrder.forEach(poNum => {
+    const cardAnim = searchQuery ? '' : ' anim-fadeUp';
+    html += `<div class="po-card bg-surface rounded-[28px] overflow-hidden${cardAnim} transition-all duration-300 shadow-sm hover:border-line-lit hover:shadow-md" data-po="${esc(poNum)}">
       ${buildPOCardHtml(poNum, groups)}
     </div>`;
   });
   html += '</div>';
 
-
-  if (searchQuery && visibleCount === 0) {
-    html = heroHtml + `
-      <div class="text-center py-16 px-6 text-txt-3 anim-fadeIn">
-        <div class="mb-4 flex justify-center [&_.ico]:w-14 [&_.ico]:h-14 [&_.ico]:text-txt-3 [&_.ico]:opacity-40">${I.search}</div>
-        <p class="text-[13px] font-normal">No PO matching "${esc(searchQuery)}"</p>
-      </div>`;
+  if (totalItems === 0) {
+    html += `<div class="text-center py-16 px-6 text-txt-3">
+      <div class="mb-4 flex justify-center [&_.ico]:w-14 [&_.ico]:h-14 [&_.ico]:text-txt-3 [&_.ico]:opacity-40">${I.search}</div>
+      <p class="text-[13px] font-normal">No PO matching "${esc(searchQuery)}"</p>
+    </div>`;
+  } else if (totalPages > 1) {
+    // 5. Pagination controls
+    html += buildPaginationHtml(currentPage, totalPages, totalItems);
   }
 
   section.innerHTML = html;
@@ -726,6 +759,52 @@ function renderDashboard() {
 
   // Ensure FAB resets on render
   if (window.updateFAB) window.updateFAB();
+}
+
+window.goToPage = (page) => {
+  currentPage = page;
+  renderDashboard();
+  // Smooth scroll to top of dashboard
+  const el = document.getElementById('dashboard-section');
+  if (el) {
+    const y = el.getBoundingClientRect().top + window.scrollY - 100;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+};
+
+function buildPaginationHtml(curr, total, totalItems) {
+  const startItem = ((curr - 1) * itemsPerPage) + 1;
+  const endItem = Math.min(curr * itemsPerPage, totalItems);
+  
+  const chevLeft = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>';
+  const chevRight = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>';
+
+  let html = `<div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-8 py-4 border-t border-line text-[13px]">
+    <div class="text-txt-3">Showing <span class="font-bold text-txt">${startItem}-${endItem}</span> of <span class="font-bold text-txt">${totalItems}</span></div>
+    <div class="flex items-center gap-1.5">`;
+
+  const prevDisabled = curr === 1 ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'hover:bg-surface-3 cursor-pointer hover:text-txt hover:border-line-lit';
+  html += `<button class="w-8 h-8 flex items-center justify-center rounded-[10px] border-[1.5px] border-line bg-surface-2 text-txt-2 transition-all duration-200 ${prevDisabled} [&_.ico]:w-4 [&_.ico]:h-4" onclick="goToPage(${curr - 1})" title="Previous">${chevLeft}</button>`;
+
+  let startP = Math.max(1, curr - 2);
+  let endP = Math.min(total, curr + 2);
+  if (curr <= 2) endP = Math.min(total, 5);
+  if (curr >= total - 1) startP = Math.max(1, total - 4);
+
+  if (startP > 1) html += `<button class="w-8 h-8 flex items-center justify-center rounded-[10px] border-[1.5px] border-transparent text-txt-3 hover:bg-surface-2 hover:text-txt transition-all duration-200 font-medium" onclick="goToPage(1)">1</button><span class="text-txt-3 px-1">...</span>`;
+
+  for (let i = startP; i <= endP; i++) {
+    const actCls = i === curr ? 'bg-accent text-white font-bold border-accent shadow-sm shadow-accent/20' : 'border border-transparent bg-transparent text-txt-2 hover:bg-surface-2 hover:text-txt hover:border-line font-medium';
+    html += `<button class="w-8 h-8 flex items-center justify-center rounded-[10px] transition-all duration-200 cursor-pointer ${actCls}" onclick="goToPage(${i})">${i}</button>`;
+  }
+
+  if (endP < total) html += `<span class="text-txt-3 px-1">...</span><button class="w-8 h-8 flex items-center justify-center rounded-[10px] border-[1.5px] border-transparent text-txt-3 hover:bg-surface-2 hover:text-txt transition-all duration-200 font-medium" onclick="goToPage(${total})">${total}</button>`;
+
+  const nextDisabled = curr === total ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'hover:bg-surface-3 cursor-pointer hover:text-txt hover:border-line-lit';
+  html += `<button class="w-8 h-8 flex items-center justify-center rounded-[10px] border-[1.5px] border-line bg-surface-2 text-txt-2 transition-all duration-200 ${nextDisabled} [&_.ico]:w-4 [&_.ico]:h-4" onclick="goToPage(${curr + 1})" title="Next">${chevRight}</button>`;
+
+  html += `</div></div>`;
+  return html;
 }
 
 /**
@@ -867,31 +946,60 @@ function buildPOCardHtml(poNum, groups) {
 }
 
 /**
- * Binds event listeners for a specific PO Card element.
+ * Binds only the non-delegatable event listeners for a PO Card.
+ * Click events are handled via delegation in setupDashboardDelegation().
  */
 function bindPOCardEvents(cardEl) {
-  const poNum = cardEl.dataset.po;
-  
-  cardEl.querySelectorAll('.cell-input').forEach(inp => {
-    inp.addEventListener('change', onCellChange);
-    inp.addEventListener('blur', onCellBlur);
-  });
-  
-  cardEl.querySelectorAll('.row-del').forEach(btn => { 
-    btn.onclick = () => deleteRow(Number(btn.dataset.ri)); 
-  });
-  
-  cardEl.querySelectorAll('.po-add-entry').forEach(btn => { 
-    btn.onclick = () => addHaulingToPO(btn.dataset.po, btn.dataset.wd); 
-  });
+  // Re-init datepickers for new rows (requires per-element state)
+  initTableDatepickers(cardEl);
+}
 
-  cardEl.querySelectorAll('.po-bulk-import').forEach(btn => { 
-    btn.onclick = () => openImportModal(btn.dataset.po, btn.dataset.wd); 
-  });
-  
-  cardEl.querySelectorAll('.po-waste-tab').forEach(btn => {
-    btn.onclick = () => {
-      const wd = btn.dataset.wd;
+/**
+ * Sets up a single delegated event listener on #dashboard-section
+ * for all interactive elements inside PO cards.
+ * This replaces hundreds of individual .onclick bindings.
+ */
+let _dashboardDelegationBound = false;
+function setupDashboardDelegation() {
+  if (_dashboardDelegationBound) return;
+  _dashboardDelegationBound = true;
+  const section = $('#dashboard-section');
+  if (!section) return;
+
+  // ── Delegated CLICK handler ─────────────────────────────
+  section.addEventListener('click', (e) => {
+    const target = e.target;
+
+    // Row delete button
+    const delBtn = target.closest('.row-del');
+    if (delBtn) { deleteRow(Number(delBtn.dataset.ri)); return; }
+
+    // Add hauling entry
+    const addEntry = target.closest('.po-add-entry');
+    if (addEntry) { addHaulingToPO(addEntry.dataset.po, addEntry.dataset.wd); return; }
+
+    // Bulk import
+    const bulkImport = target.closest('.po-bulk-import');
+    if (bulkImport) { openImportModal(bulkImport.dataset.po, bulkImport.dataset.wd); return; }
+
+    // Add waste category
+    const addWaste = target.closest('.po-add-waste');
+    if (addWaste) { showAddWasteModal(addWaste.dataset.po); return; }
+
+    // Set threshold
+    const thrBtn = target.closest('.po-thr-btn');
+    if (thrBtn) { openThresholdModal(thrBtn.dataset.po, thrBtn.dataset.wd); return; }
+
+    // Edit PO drawer
+    const editBtn = target.closest('.po-edit-btn');
+    if (editBtn) { openPODrawer(editBtn.dataset.po); return; }
+
+    // Waste tab click
+    const wasteTab = target.closest('.po-waste-tab');
+    if (wasteTab) {
+      const cardEl = wasteTab.closest('.po-card');
+      const poNum = cardEl.dataset.po;
+      const wd = wasteTab.dataset.wd;
       if (activeWasteTab[poNum] === wd) return;
 
       const oldStart = parseNum(cardEl.querySelector('.po-stat-start')?.dataset.val) || 0;
@@ -907,27 +1015,37 @@ function bindPOCardEvents(cardEl) {
       animateValue(cardEl.querySelector('.po-stat-start'), oldStart, newStart, 600);
       animateValue(cardEl.querySelector('.po-stat-rem'), oldRem, newRem, 600);
 
-      // Re-bind events for the fresh content
       bindPOCardEvents(cardEl);
       updateTabPill(cardEl);
-    };
-    btn.ondblclick = () => renameWasteTab(btn.dataset.po, btn.dataset.wd);
-  });
-  
-  cardEl.querySelectorAll('.po-add-waste').forEach(btn => { 
-    btn.onclick = () => showAddWasteModal(btn.dataset.po); 
-  });
-  
-  cardEl.querySelectorAll('.po-thr-btn').forEach(btn => { 
-    btn.onclick = () => openThresholdModal(btn.dataset.po, btn.dataset.wd); 
-  });
-  
-  cardEl.querySelectorAll('.po-edit-btn').forEach(btn => { 
-    btn.onclick = () => openPODrawer(btn.dataset.po); 
+      return;
+    }
+
+    // Empty state "Add first entry" button
+    const emptyAdd = target.closest('#btn-empty-add');
+    if (emptyAdd) { addPO(); return; }
   });
 
-  // Re-init datepickers for the new rows
-  initTableDatepickers(cardEl);
+  // ── Delegated DBLCLICK handler (tab rename) ─────────────
+  section.addEventListener('dblclick', (e) => {
+    const wasteTab = e.target.closest('.po-waste-tab');
+    if (wasteTab) {
+      renameWasteTab(wasteTab.dataset.po, wasteTab.dataset.wd);
+    }
+  });
+
+  // ── Delegated CHANGE handler (cell inputs) ──────────────
+  section.addEventListener('change', (e) => {
+    if (e.target.matches('.cell-input')) {
+      onCellChange(e);
+    }
+  });
+
+  // ── Delegated BLUR handler (cell inputs) ────────────────
+  section.addEventListener('focusout', (e) => {
+    if (e.target.matches('.cell-input')) {
+      onCellBlur(e);
+    }
+  });
 }
 
 /**
