@@ -459,7 +459,7 @@ function renderApp() {
     </header>
     <div class="flex items-center gap-[3px] px-7 py-2.5 bg-surface border-b border-line overflow-x-auto transition-colors duration-300 tab-bar-responsive" id="tab-bar"></div>
     <div class="flex-1 p-7 max-w-[1000px] mx-auto w-full relative z-10 content-responsive">
-      <div id="toolbar-section"></div>
+      <div id="toolbar-section" class="sticky top-[60px] z-[50] bg-body py-4"></div>
       <div id="dashboard-section"></div>
     </div>
   </div>`;
@@ -581,7 +581,7 @@ function renderToolbar() {
   const ghostBtn = 'inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-line rounded-[10px] font-semibold text-xs cursor-pointer transition-all duration-200 whitespace-nowrap bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt hover:border-line-lit [&_.ico]:w-4 [&_.ico]:h-4 [&_.ico]:align-[-2px]';
   
   $('#toolbar-section').innerHTML = `
-  <div class="flex items-center justify-between gap-4 mb-6 toolbar-inner flex-wrap">
+  <div class="flex items-center justify-between gap-4 toolbar-inner flex-wrap">
     <div class="flex flex-wrap items-center gap-2.5">
       <button class="${ghostBtn}" id="btn-add-entry">${I.plus} New Entry</button>
       <button class="${ghostBtn}" id="btn-export">${I.arrowDown} Export CSV</button>
